@@ -209,7 +209,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             {showCameraView ? t('back') : t('cancel')}
           </button>
           <h2 className="text-lg font-semibold text-white z-20">
-            {showCameraView ? t('snapAnExpense') : t('addExpense')}
+            {showCameraView ? t('snapAnExpense') : (capturedImage ? t('reviewExpense') : t('addExpense'))}
           </h2>
           <button 
             className="text-[#4a5d44] font-medium hover:text-opacity-80 z-20"
