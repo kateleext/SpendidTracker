@@ -20,66 +20,70 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const [showCameraView, setShowCameraView] = useState<boolean>(true);
   const [cameraInitialized, setCameraInitialized] = useState<boolean>(false);
   
-  // Initialize camera when modal opens - with safety measures
+  // Initialize form values when modal opens
   useEffect(() => {
-    let mounted = true;
-    let cameraTimeout: NodeJS.Timeout | null = null;
-    
     if (isOpen) {
-      console.log('AddExpenseModal: Modal opened, initializing camera');
+      console.log('AddExpenseModal: Modal opened, resetting form values');
       resetCapture();
       setAmount('');
       setTitle('groceries');
       setShowCameraView(true);
+      setCameraInitialized(false); // Start with camera disabled until explicitly started
+    }
+  }, [isOpen, resetCapture]);
+  
+  // Separate effect to handle camera initialization - only runs once per modal open
+  useEffect(() => {
+    let mounted = true;
+    let initTimeout: NodeJS.Timeout | null = null;
+    
+    // Only initialize camera when modal is open and we're in camera view
+    if (isOpen && showCameraView) {
+      console.log('AddExpenseModal: Starting camera initialization sequence');
       
-      // Delay camera initialization to avoid rapid play/stop calls
-      cameraTimeout = setTimeout(async () => {
+      // Make sure any previous streams are stopped
+      stopCamera();
+      
+      // Init camera with delay to avoid rapid initialization
+      initTimeout = setTimeout(async () => {
         if (!mounted) return;
         
+        console.log('AddExpenseModal: Actually initializing camera now');
+        
         try {
-          // First ensure any previous streams are fully stopped
-          stopCamera();
-          
-          // Give browser a moment before starting new stream
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          if (!mounted) return;
-          
-          // Check for browser support first
-          if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-            const success = await startCamera();
-            if (mounted && success) {
-              setCameraInitialized(true);
-            } else if (mounted) {
-              // If camera initialization fails but no error was thrown
-              setCameraInitialized(false);
-            }
-          } else {
-            // Handle browser without camera support
-            if (mounted) {
-              console.log('Browser does not support media devices');
-              setCameraInitialized(false);
-            }
+          if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+            console.log('Media devices not supported');
+            return;
           }
-        } catch (error) {
-          console.error('Failed to initialize camera:', error);
-          if (mounted) {
-            setCameraInitialized(false);
+          
+          const success = await startCamera();
+          
+          if (mounted && success) {
+            console.log('Camera initialized successfully');
+            setCameraInitialized(true);
           }
+        } catch (err) {
+          console.error('Camera initialization error:', err);
         }
-      }, 300);
-    } else {
-      console.log('AddExpenseModal: Modal closed, stopping camera');
-      stopCamera();
-      setCameraInitialized(false);
+      }, 500);
     }
     
+    // Cleanup function to handle unmounting or state changes
     return () => {
       mounted = false;
-      if (cameraTimeout) clearTimeout(cameraTimeout);
-      stopCamera();
+      
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+      
+      // Only stop camera if we're closing the modal or switching views
+      if (!isOpen || !showCameraView) {
+        console.log('AddExpenseModal: Stopping camera in cleanup');
+        stopCamera();
+        setCameraInitialized(false);
+      }
     };
-  }, [isOpen, startCamera, stopCamera, resetCapture]);
+  }, [isOpen, showCameraView, startCamera, stopCamera]);
   
   // Handle capture button click
   const handleCapture = () => {
@@ -174,10 +178,16 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   // Handle cancel button click
   const handleCancel = () => {
     console.log('AddExpenseModal: Cancel button clicked');
+    
+    // If we're in the form view (after taking a picture), go back to camera view
     if (!showCameraView && capturedImage) {
+      resetCapture();
       setShowCameraView(true);
-      startCamera();
+      // Camera will start automatically through the useEffect
     } else {
+      // If we're in camera view, close the modal completely
+      stopCamera();
+      setCameraInitialized(false);
       onClose();
     }
   };
@@ -190,15 +200,17 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     <div id="addExpenseModal" className="fixed inset-0 bg-black/90 z-50 flex flex-col">
       <div className="w-full h-full relative overflow-hidden">
         {/* Header with close button */}
-        <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-transparent">
+        <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-black/30 backdrop-blur-sm">
           <button 
             className="text-white hover:text-gray-200 font-medium z-20"
             onClick={handleCancel}
             type="button"
           >
-            {t('cancel')}
+            {showCameraView ? t('back') : t('cancel')}
           </button>
-          <h2 className="text-lg font-semibold text-white z-20">{t('addExpense')}</h2>
+          <h2 className="text-lg font-semibold text-white z-20">
+            {showCameraView ? t('snapAnExpense') : t('addExpense')}
+          </h2>
           <button 
             className="text-[#4a5d44] font-medium hover:text-opacity-80 z-20"
             onClick={handleSave}

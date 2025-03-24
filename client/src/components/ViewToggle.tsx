@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ViewType } from '../types';
-import { CalendarDays, List } from 'lucide-react';
+import { CalendarDays, LayoutGrid, List } from 'lucide-react';
 
 interface ViewToggleProps {
   activeView: ViewType;
@@ -29,7 +29,7 @@ const ViewToggle = ({ activeView, onViewChange }: ViewToggleProps) => {
         type="button"
         aria-pressed={activeView === 'daily'}
       >
-        <List className="w-3.5 h-3.5 mr-1.5" />
+        <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />
         {t('daily')}
       </button>
       <button
@@ -42,7 +42,7 @@ const ViewToggle = ({ activeView, onViewChange }: ViewToggleProps) => {
         type="button"
         aria-pressed={activeView === 'monthly'}
       >
-        <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
+        <List className="w-3.5 h-3.5 mr-1.5" />
         {t('monthly')}
       </button>
     </div>
