@@ -10,7 +10,7 @@ const AddButton = ({ onAddClick }: AddButtonProps) => {
 
   return (
     <button
-      className="add-log-button fixed bottom-8 left-1/2 transform -translate-x-1/2 w-auto h-12 bg-accent rounded-full shadow-lg flex items-center justify-center cursor-pointer z-20 px-6 border-0 hover:shadow-xl active:scale-95 transition-all"
+      className="add-log-button fixed bottom-8 left-1/2 transform -translate-x-1/2 w-auto h-12 bg-[#4a5d44] rounded-full shadow-lg flex items-center justify-center cursor-pointer z-20 px-6 border-0 hover:shadow-xl active:scale-95 transition-all"
       onClick={onAddClick}
       type="button"
       aria-label={t('addExpense')}

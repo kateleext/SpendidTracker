@@ -169,15 +169,15 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         {/* Header with close button */}
         <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-transparent">
           <button 
-            className="text-white hover:text-gray-200 font-medium"
+            className="text-white hover:text-gray-200 font-medium z-20"
             onClick={handleCancel}
             type="button"
           >
             {t('cancel')}
           </button>
-          <h2 className="text-lg font-semibold text-white">{t('addExpense')}</h2>
+          <h2 className="text-lg font-semibold text-white z-20">{t('addExpense')}</h2>
           <button 
-            className="text-accent font-medium hover:text-accent-light"
+            className="text-[#4a5d44] font-medium hover:text-opacity-80 z-20"
             onClick={handleSave}
             disabled={showCameraView || createExpenseMutation.isPending}
             type="button"
@@ -187,7 +187,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         </div>
         
         {/* Full-screen Camera/Image section */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-10">
           {capturedImage ? (
             <img 
               src={capturedImage} 
@@ -216,7 +216,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   type="button"
                   aria-label={t('takePicture')}
                 >
-                  <div className="w-14 h-14 rounded-full border-2 border-accent"></div>
+                  <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
                 </button>
               )}
             </div>
@@ -225,7 +225,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         
         {/* Form section - semi-transparent card at the bottom */}
         {!showCameraView && capturedImage && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-6 rounded-t-xl">
+          <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-md p-6 rounded-t-xl z-20">
             <div className="mb-6">
               <label className="block text-white text-sm mb-2">{t('amount')}</label>
               <div className="relative">
@@ -238,6 +238,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   min="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  autoFocus
                 />
               </div>
             </div>

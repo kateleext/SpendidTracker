@@ -196,7 +196,7 @@ export class DatabaseStorage implements IStorage {
       .from(monthlyBudgets)
       .where(
         and(
-          eq(monthlyBudgets.user_id, budget.user_id),
+          eq(monthlyBudgets.user_id, parseInt(budget.user_id.toString())),
           eq(monthlyBudgets.month, budget.month),
           eq(monthlyBudgets.year, budget.year)
         )

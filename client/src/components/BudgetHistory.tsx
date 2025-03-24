@@ -47,23 +47,23 @@ const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
                 maximumFractionDigits: 0
               }).format(item.spent);
               
-              // Generate chart points based on spending amount
-              // Height is relative to the spending amount
+              // Generate chart points based on the actual spending amount
               const generateChartPoints = () => {
                 const MAX_HEIGHT = 25; // Maximum height in the SVG
                 const points = [];
                 const spendingAmount = item.spent;
+                const normalizedHeight = Math.min(MAX_HEIGHT, (spendingAmount / 1000) * MAX_HEIGHT); // Normalize to fit within MAX_HEIGHT
                 
-                // We'll create a simple upward trend line ending at the actual amount
+                // Create a slope that rises to the actual spending amount
                 for (let i = 0; i < 5; i++) {
                   const x = i * 20;
-                  const heightFactor = i / 4; // 0 to 1 as i goes from 0 to 4
-                  const y = MAX_HEIGHT - (heightFactor * (spendingAmount % MAX_HEIGHT)) - 3;
+                  const factor = i / 4; // 0 to 1 as i goes from 0 to 4
+                  const y = MAX_HEIGHT - (factor * normalizedHeight);
                   points.push(`${x},${y}`);
                 }
                 
-                // Add the final point
-                points.push(`100,${Math.max(2, MAX_HEIGHT - (spendingAmount % MAX_HEIGHT))}`);
+                // Add the final point representing the actual spending
+                points.push(`100,${Math.max(2, MAX_HEIGHT - normalizedHeight)}`);
                 
                 return points.join(' ');
               };
