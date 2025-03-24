@@ -1,14 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { useAppContext } from '../context/AppContext';
 import { Budget } from '../types';
 
 interface BudgetHeroProps {
   budget: Budget;
+  onOpenSettings: () => void;
 }
 
-const BudgetHero = ({ budget }: BudgetHeroProps) => {
+const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
   const { t } = useTranslation();
-  const { openSettingsModal } = useAppContext();
   
   // Format amounts as currency
   const formatCurrency = (amount: number) => {
@@ -25,7 +24,7 @@ const BudgetHero = ({ budget }: BudgetHeroProps) => {
   
   return (
     <div className="budget-hero px-5 py-8 text-center">
-      <div className="budget-value text-[72px] font-bold bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent leading-none my-2.5">
+      <div className="budget-value text-[72px] font-bold text-[#4a5d44] leading-none my-2.5">
         {remainingBudget}
       </div>
       <div className="budget-caption text-[16px] text-text-secondary mb-6">
@@ -50,7 +49,7 @@ const BudgetHero = ({ budget }: BudgetHeroProps) => {
           className="text-accent font-medium ml-1"
           onClick={(e) => {
             e.preventDefault();
-            openSettingsModal();
+            onOpenSettings();
           }}
         >
           {t('adjust')}

@@ -20,9 +20,10 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const [showCameraView, setShowCameraView] = useState<boolean>(true);
   const [cameraInitialized, setCameraInitialized] = useState<boolean>(false);
   
-  // Initialize camera when modal opens
+  // Initialize camera when modal opens - with safety measures
   useEffect(() => {
     let mounted = true;
+    let cameraTimeout: NodeJS.Timeout | null = null;
     
     if (isOpen) {
       console.log('AddExpenseModal: Modal opened, initializing camera');
@@ -31,8 +32,18 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       setTitle('groceries');
       setShowCameraView(true);
       
-      const initCamera = async () => {
+      // Delay camera initialization to avoid rapid play/stop calls
+      cameraTimeout = setTimeout(async () => {
+        if (!mounted) return;
+        
         try {
+          // First ensure any previous streams are fully stopped
+          stopCamera();
+          
+          // Give browser a moment before starting new stream
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          if (!mounted) return;
           const success = await startCamera();
           if (mounted && success) {
             setCameraInitialized(true);
@@ -43,9 +54,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             setCameraInitialized(false);
           }
         }
-      };
-      
-      initCamera();
+      }, 300);
     } else {
       console.log('AddExpenseModal: Modal closed, stopping camera');
       stopCamera();
@@ -54,6 +63,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     
     return () => {
       mounted = false;
+      if (cameraTimeout) clearTimeout(cameraTimeout);
       stopCamera();
     };
   }, [isOpen, startCamera, stopCamera, resetCapture]);
