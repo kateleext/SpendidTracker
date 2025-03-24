@@ -7,7 +7,10 @@ const Navigation = () => {
   const { tab, setTab } = useAppContext();
 
   const handleTabChange = (selectedTab: TabType) => {
-    setTab(selectedTab);
+    console.log(`Navigation: changing tab from ${tab} to ${selectedTab}`);
+    if (tab !== selectedTab) {
+      setTab(selectedTab);
+    }
   };
 
   return (
@@ -18,6 +21,8 @@ const Navigation = () => {
             tab === 'journal' ? 'text-accent font-semibold border-accent' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => handleTabChange('journal')}
+          type="button"
+          aria-pressed={tab === 'journal'}
         >
           {t('journal')}
         </button>
@@ -26,6 +31,8 @@ const Navigation = () => {
             tab === 'budget' ? 'text-accent font-semibold border-accent' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => handleTabChange('budget')}
+          type="button"
+          aria-pressed={tab === 'budget'}
         >
           {t('budget')}
         </button>

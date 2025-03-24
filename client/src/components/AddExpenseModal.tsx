@@ -128,9 +128,28 @@ const AddExpenseModal = () => {
   }
 
   return (
-    <div id="addExpenseModal" className="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center">
-      <div className="bg-white rounded-xl w-[90%] max-w-[360px] overflow-hidden shadow-xl">
-        <div className="add-expense-preview w-full h-48 bg-gray-200">
+    <div id="addExpenseModal" className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+      <div className="bg-white w-full h-full overflow-auto">
+        {/* Header with close button */}
+        <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-white border-b border-gray-200">
+          <button 
+            className="text-gray-500 hover:text-gray-700"
+            onClick={handleCancel}
+          >
+            {t('cancel')}
+          </button>
+          <h2 className="text-lg font-semibold">{t('addExpense')}</h2>
+          <button 
+            className="text-accent font-medium hover:text-accent-light"
+            onClick={handleSave}
+            disabled={showCameraView || createExpenseMutation.isPending}
+          >
+            {createExpenseMutation.isPending ? t('saving') : t('save')}
+          </button>
+        </div>
+        
+        {/* Camera/Image section - taller in fullscreen */}
+        <div className="add-expense-preview w-full h-72 bg-gray-200">
           {capturedImage ? (
             <img 
               src={capturedImage} 
@@ -145,22 +164,24 @@ const AddExpenseModal = () => {
                 playsInline 
               />
               <button 
-                className="absolute bottom-4 w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-md"
+                className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
                 onClick={handleCapture}
               >
-                <div className="w-12 h-12 rounded-full border-2 border-accent"></div>
+                <div className="w-14 h-14 rounded-full border-2 border-accent"></div>
               </button>
             </div>
           )}
         </div>
-        <div className="p-5">
-          <div className="mb-4">
-            <label className="block text-text-secondary text-sm mb-1">{t('amount')}</label>
+        
+        {/* Form section */}
+        <div className="p-6">
+          <div className="mb-6">
+            <label className="block text-text-secondary text-sm mb-2">{t('amount')}</label>
             <div className="relative">
-              <span className="absolute top-3 left-3 text-text-secondary">$</span>
+              <span className="absolute top-4 left-4 text-text-secondary text-xl">$</span>
               <input 
                 type="number" 
-                className="w-full py-2 px-8 border border-gray-300 rounded-lg" 
+                className="w-full py-3 px-10 border border-gray-300 rounded-lg text-2xl font-medium" 
                 placeholder="0.00" 
                 step="0.01" 
                 min="0"
@@ -170,31 +191,16 @@ const AddExpenseModal = () => {
               />
             </div>
           </div>
-          <div className="mb-5">
-            <label className="block text-text-secondary text-sm mb-1">{t('description')}</label>
+          <div className="mb-6">
+            <label className="block text-text-secondary text-sm mb-2">{t('description')}</label>
             <input 
               type="text" 
-              className="w-full py-2 px-3 border border-gray-300 rounded-lg" 
+              className="w-full py-3 px-4 border border-gray-300 rounded-lg" 
               placeholder="groceries" 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={showCameraView}
             />
-          </div>
-          <div className="flex justify-end gap-3">
-            <button 
-              className="px-5 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-text-primary"
-              onClick={handleCancel}
-            >
-              {t('cancel')}
-            </button>
-            <button 
-              className="px-5 py-2 border-0 rounded-lg text-sm font-medium bg-accent text-white"
-              onClick={handleSave}
-              disabled={showCameraView || createExpenseMutation.isPending}
-            >
-              {createExpenseMutation.isPending ? t('saving') : t('save')}
-            </button>
           </div>
         </div>
       </div>

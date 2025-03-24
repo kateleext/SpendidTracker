@@ -8,7 +8,10 @@ const ViewToggle = () => {
   const { view, setView } = useAppContext();
 
   const handleViewChange = (selectedView: ViewType) => {
-    setView(selectedView);
+    console.log(`ViewToggle: changing view from ${view} to ${selectedView}`);
+    if (view !== selectedView) {
+      setView(selectedView);
+    }
   };
 
   return (
@@ -20,6 +23,8 @@ const ViewToggle = () => {
             : 'text-gray-500 hover:text-gray-700'
         }`}
         onClick={() => handleViewChange('daily')}
+        type="button"
+        aria-pressed={view === 'daily'}
       >
         <List className="w-3.5 h-3.5 mr-1.5" />
         {t('daily')}
@@ -31,6 +36,8 @@ const ViewToggle = () => {
             : 'text-gray-500 hover:text-gray-700'
         }`}
         onClick={() => handleViewChange('monthly')}
+        type="button"
+        aria-pressed={view === 'monthly'}
       >
         <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
         {t('monthly')}
