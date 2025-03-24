@@ -4,7 +4,11 @@ import BudgetHero from "../components/BudgetHero";
 import BudgetHistory from "../components/BudgetHistory";
 import { Budget, BudgetHistoryItem } from "../types";
 
-const BudgetPage = () => {
+interface BudgetPageProps {
+  onOpenSettings: () => void;
+}
+
+const BudgetPage = ({ onOpenSettings }: BudgetPageProps) => {
   const { t } = useTranslation();
   
   // Fetch current budget
@@ -27,7 +31,7 @@ const BudgetPage = () => {
         </div>
       ) : budget ? (
         <>
-          <BudgetHero budget={budget} />
+          <BudgetHero budget={budget} onOpenSettings={onOpenSettings} />
           
           <div className="section-title mx-5 my-5 text-[18px] font-semibold text-text-primary">
             {t('spendingHistory')}

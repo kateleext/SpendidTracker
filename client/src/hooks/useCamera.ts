@@ -9,6 +9,23 @@ export const useCamera = () => {
 
   const startCamera = useCallback(async () => {
     try {
+      // Check if the browser supports getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.log('getUserMedia is not supported in this browser');
+        toast({
+          title: 'Camera Not Supported',
+          description: 'Your browser does not support camera access.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      // First stop any existing streams to avoid conflicts
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Try to get camera access with environment (back) camera preference
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
       });
@@ -16,22 +33,44 @@ export const useCamera = () => {
       setStream(mediaStream);
       setCapturedImage(null);
       
+      // Only set video source if the element is available
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
+        
+        // Wait for video to be ready before playing
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error('Error playing video:', err);
+            });
+          }
+        };
       }
       
       return true;
     } catch (error) {
       console.error('Error accessing camera:', error);
+      
+      // More user-friendly error message
+      let errorMessage = 'Could not access your camera. Please check permissions.';
+      
+      // Check if error is a permission error
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorMessage = 'Camera access was denied. Please allow camera permissions.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No camera detected on your device.';
+        }
+      }
+      
       toast({
         title: 'Camera Error',
-        description: 'Could not access your camera. Please check permissions.',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
     }
-  }, [toast]);
+  }, [toast, stream]);
 
   const stopCamera = useCallback(() => {
     if (stream) {

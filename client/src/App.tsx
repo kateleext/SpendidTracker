@@ -99,7 +99,7 @@ function App() {
               onViewChange={handleViewChange}
               onImageClick={openImageModal}
             /> : 
-            <Budget />
+            <Budget onOpenSettings={openSettingsModal} />
           }
         </Route>
         

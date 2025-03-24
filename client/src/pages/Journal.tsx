@@ -94,8 +94,8 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   return (
     <div id="diary-view" className="view-content">
       <div className="diary-header flex items-center justify-between px-5 py-2.5 z-5">
-        <div className="flex-grow"></div>
         <ViewToggle activeView={view} onViewChange={onViewChange} />
+        <div className="flex-grow"></div>
       </div>
 
       {view === 'daily' ? (

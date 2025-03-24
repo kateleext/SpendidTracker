@@ -44,9 +44,22 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
           await new Promise(resolve => setTimeout(resolve, 100));
           
           if (!mounted) return;
-          const success = await startCamera();
-          if (mounted && success) {
-            setCameraInitialized(true);
+          
+          // Check for browser support first
+          if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+            const success = await startCamera();
+            if (mounted && success) {
+              setCameraInitialized(true);
+            } else if (mounted) {
+              // If camera initialization fails but no error was thrown
+              setCameraInitialized(false);
+            }
+          } else {
+            // Handle browser without camera support
+            if (mounted) {
+              console.log('Browser does not support media devices');
+              setCameraInitialized(false);
+            }
           }
         } catch (error) {
           console.error('Failed to initialize camera:', error);
