@@ -70,17 +70,37 @@ export const useCamera = () => {
       // Only set video source if the element is available
       if (videoRef.current) {
         console.log('useCamera: Setting video srcObject with media stream');
-        videoRef.current.srcObject = mediaStream;
         
-        // Wait for video to be ready before playing
-        videoRef.current.onloadedmetadata = () => {
-          console.log('useCamera: Video metadata loaded, attempting to play');
-          if (videoRef.current) {
-            videoRef.current.play().catch(err => {
-              console.error('useCamera: Error playing video:', err);
-            });
-          }
-        };
+        try {
+          // Set explicit dimensions to help with rendering
+          videoRef.current.width = 640;
+          videoRef.current.height = 480;
+          
+          // Set some explicit CSS properties to ensure visibility
+          videoRef.current.style.display = 'block';
+          videoRef.current.style.width = '100%';
+          videoRef.current.style.height = '100%';
+          videoRef.current.style.objectFit = 'cover';
+          
+          // Set the media stream as the source
+          videoRef.current.srcObject = mediaStream;
+          
+          // Wait for video to be ready before playing
+          videoRef.current.onloadedmetadata = async () => {
+            console.log('useCamera: Video metadata loaded, attempting to play');
+            if (videoRef.current) {
+              try {
+                // Force playback to start
+                await videoRef.current.play();
+                console.log('useCamera: Video playback started successfully');
+              } catch (err) {
+                console.error('useCamera: Error playing video:', err);
+              }
+            }
+          };
+        } catch (err) {
+          console.error('useCamera: Error setting up video element:', err);
+        }
       } else {
         console.warn('useCamera: Video ref is not available');
       }
@@ -148,15 +168,29 @@ export const useCamera = () => {
       const canvas = document.createElement('canvas');
       const video = videoRef.current;
       
-      // Ensure we have valid dimensions
-      if (!video.videoWidth || !video.videoHeight) {
-        console.error('useCamera: Video dimensions not available');
-        return null;
+      // Set default dimensions in case video dimensions aren't available
+      let width = 640;
+      let height = 480;
+      
+      // Use actual video dimensions if available
+      if (video.videoWidth && video.videoHeight) {
+        width = video.videoWidth;
+        height = video.videoHeight;
+        console.log(`useCamera: Using actual video dimensions ${width}x${height}`);
+      } else {
+        // If dimensions aren't available, try to use the element dimensions
+        if (video.offsetWidth && video.offsetHeight) {
+          width = video.offsetWidth;
+          height = video.offsetHeight;
+          console.log(`useCamera: Using element dimensions ${width}x${height}`);
+        } else {
+          console.log(`useCamera: Using default dimensions ${width}x${height}`);
+        }
       }
       
-      console.log(`useCamera: Video dimensions ${video.videoWidth}x${video.videoHeight}`);
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Set canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
       
       const ctx = canvas.getContext('2d');
       if (!ctx) {
@@ -164,8 +198,18 @@ export const useCamera = () => {
         return null;
       }
       
-      // Draw the current video frame to the canvas
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Fill with a default color first (just in case drawing fails)
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Try to draw the current video frame to the canvas
+      try {
+        ctx.drawImage(video, 0, 0, width, height);
+        console.log('useCamera: Successfully drew video frame to canvas');
+      } catch (err) {
+        console.error('useCamera: Error drawing video to canvas:', err);
+        // Continue anyway - we'll at least have the gray background
+      }
       
       // Create a high-quality JPEG data URL
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
