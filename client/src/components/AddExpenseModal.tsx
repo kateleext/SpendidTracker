@@ -11,15 +11,24 @@ interface AddExpenseModalProps {
 
 const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const { t } = useTranslation();
-  const { videoRef, capturedImage, startCamera, stopCamera, capturePhoto, resetCapture } = useCamera();
+  const { 
+    videoRef, 
+    capturedImage, 
+    isVideoPlaying, // New state from the updated hook
+    startCamera, 
+    stopCamera, 
+    capturePhoto, 
+    resetCapture 
+  } = useCamera();
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [amount, setAmount] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [showCameraView, setShowCameraView] = useState<boolean>(true);
   const [cameraInitialized, setCameraInitialized] = useState<boolean>(false);
-  
+
   // Initialize form values when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -31,48 +40,67 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       setCameraInitialized(false); // Start with camera disabled until explicitly started
     }
   }, [isOpen, resetCapture]);
-  
+
   // Initialize camera only once when showing camera view
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout | null = null;
-    
+
     // Only initialize camera when modal is open, we're in camera view, and camera is not already initialized
     if (isOpen && showCameraView && !cameraInitialized) {
       console.log('AddExpenseModal: Starting camera initialization sequence');
-      
+
       // Wait a moment to avoid rapid initialization
       initTimeout = setTimeout(async () => {
         if (!mounted) return;
-        
+
         console.log('AddExpenseModal: Actually initializing camera now');
-        
+
         try {
           if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
             console.log('Media devices not supported');
+            toast({
+              title: t('error'),
+              description: t('cameraNotSupported'),
+              variant: 'destructive',
+            });
             return;
           }
-          
+
           const success = await startCamera();
-          
+
           if (mounted && success) {
             console.log('Camera initialized successfully');
             setCameraInitialized(true);
+          } else if (mounted) {
+            // Camera failed to initialize but component is still mounted
+            toast({
+              title: t('error'),
+              description: t('cameraInitializationFailed'),
+              variant: 'destructive',
+            });
           }
         } catch (err) {
           console.error('Camera initialization error:', err);
+          if (mounted) {
+            toast({
+              title: t('error'),
+              description: t('cameraInitializationError'),
+              variant: 'destructive',
+            });
+          }
         }
       }, 500);
     }
-    
+
     // Cleanup function to handle unmounting or component unload
     return () => {
       mounted = false;
-      
+
       if (initTimeout) {
         clearTimeout(initTimeout);
       }
-      
+
       // Stop camera only when modal closes completely
       if (!isOpen) {
         console.log('AddExpenseModal: Modal closed, stopping camera');
@@ -80,15 +108,51 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         setCameraInitialized(false);
       }
     };
-  }, [isOpen, showCameraView, cameraInitialized, startCamera, stopCamera]);
-  
+  }, [isOpen, showCameraView, cameraInitialized, startCamera, stopCamera, toast, t]);
+
+  // Update cameraInitialized state based on isVideoPlaying
+  useEffect(() => {
+    // When video starts playing, mark camera as fully initialized
+    if (isVideoPlaying && !cameraInitialized) {
+      setCameraInitialized(true);
+      console.log('Camera fully initialized and playing');
+    }
+    // If video stops playing while camera was considered initialized, update state
+    else if (!isVideoPlaying && cameraInitialized && showCameraView) {
+      setCameraInitialized(false);
+      console.log('Video stopped playing, camera needs reinitialization');
+    }
+  }, [isVideoPlaying, cameraInitialized, showCameraView]);
+
   // Handle capture button click
   const handleCapture = () => {
     console.log('AddExpenseModal: Capturing photo');
-    capturePhoto();
-    setShowCameraView(false);
+
+    // Check if video is actually playing before attempting capture
+    if (!isVideoPlaying) {
+      console.error('Cannot capture - video is not playing');
+      toast({
+        title: t('error'),
+        description: t('cameraNotReady'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const photoData = capturePhoto();
+
+    if (photoData) {
+      console.log('Photo captured successfully');
+      setShowCameraView(false);
+    } else {
+      toast({
+        title: t('error'),
+        description: t('photoCaptureFailed'),
+        variant: 'destructive',
+      });
+    }
   };
-  
+
   // Set up expense creation mutation
   const createExpenseMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -97,11 +161,11 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to save expense');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -110,12 +174,12 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/budget/current'] });
       queryClient.invalidateQueries({ queryKey: ['/api/budget/history'] });
-      
+
       toast({
         title: t('expenseAdded'),
         description: t('expenseAddedSuccess'),
       });
-      
+
       onClose();
     },
     onError: (error) => {
@@ -127,7 +191,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       });
     }
   });
-  
+
   // Handle save button click
   const handleSave = async () => {
     console.log('AddExpenseModal: Save button clicked');
@@ -139,7 +203,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       });
       return;
     }
-    
+
     if (!amount || parseFloat(amount) <= 0) {
       toast({
         title: t('error'),
@@ -148,20 +212,20 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       });
       return;
     }
-    
+
     try {
       console.log('AddExpenseModal: Processing captured image');
-      
+
       // Convert data URL to Blob with proper type
       const dataURLParts = capturedImage.split(',');
       if (dataURLParts.length !== 2) {
         throw new Error('Invalid image data format');
       }
-      
+
       const mimeMatch = dataURLParts[0].match(/:(.*?);/);
       const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
       console.log(`AddExpenseModal: Image MIME type: ${mime}`);
-      
+
       // Handle base64 data
       let base64Data;
       try {
@@ -171,37 +235,37 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         console.error('Error extracting base64 data:', err);
         throw new Error('Failed to process image data');
       }
-      
+
       // Ensure we have valid base64 data
       if (!base64Data || base64Data.trim() === '') {
         console.error('AddExpenseModal: Empty base64 data');
         throw new Error('No image data available');
       }
-      
+
       // Convert base64 to binary with chunking for large images
       let blob: Blob;
       try {
         const byteCharacters = atob(base64Data);
         const byteArrays = [];
-        
+
         // Process in chunks to avoid memory issues
         const chunkSize = 1024; // Process 1kb at a time
         for (let i = 0; i < byteCharacters.length; i += chunkSize) {
           const chunk = byteCharacters.slice(i, i + chunkSize);
           const byteNumbers = new Array(chunk.length);
-          
+
           for (let j = 0; j < chunk.length; j++) {
             byteNumbers[j] = chunk.charCodeAt(j);
           }
-          
+
           const byteArray = new Uint8Array(byteNumbers);
           byteArrays.push(byteArray);
         }
-        
+
         // Create blob with proper MIME type
         blob = new Blob(byteArrays, { type: mime });
         console.log(`AddExpenseModal: Created blob of type ${mime}, size: ${blob.size} bytes`);
-        
+
         if (blob.size === 0) {
           throw new Error('Created blob has zero size');
         }
@@ -209,13 +273,13 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         console.error('Error creating blob:', err);
         throw new Error('Failed to process image');
       }
-      
+
       // Create form data
       const formData = new FormData();
       formData.append('image', blob, `expense_${Date.now()}.jpg`);
       formData.append('amount', amount);
-      formData.append('title', title || 'groceries');
-      
+      formData.append('title', title || '');
+
       console.log('AddExpenseModal: Submitting form data');
       // Submit the form
       createExpenseMutation.mutate(formData);
@@ -228,15 +292,16 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       });
     }
   };
-  
+
   // Handle cancel button click
   const handleCancel = () => {
     console.log('AddExpenseModal: Cancel button clicked');
-    
+
     // If we're in the form view (after taking a picture), go back to camera view
     if (!showCameraView && capturedImage) {
       resetCapture();
       setShowCameraView(true);
+      setCameraInitialized(false); // Reset camera initialization state
       // Camera will start automatically through the useEffect
     } else {
       // If we're in camera view, close the modal completely
@@ -245,7 +310,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       onClose();
     }
   };
-  
+
   if (!isOpen) {
     return null;
   }
@@ -274,7 +339,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             {createExpenseMutation.isPending ? t('saving') : t('save')}
           </button>
         </div>
-        
+
         {/* Full-screen Camera/Image section */}
         <div className="absolute inset-0 pt-12 z-10">
           {capturedImage ? (
@@ -285,36 +350,35 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             />
           ) : (
             <div id="cameraPreview" className="w-full h-full flex items-center justify-center bg-black">
-              {cameraInitialized ? (
-                <video 
-                  ref={videoRef} 
-                  className="h-full w-full object-cover" 
-                  playsInline 
-                  autoPlay
-                  muted
-                />
-              ) : (
-                <div className="text-white text-center">
+              {/* Always render the video element to ensure it's in the DOM */}
+              <video 
+                ref={videoRef} 
+                className={`h-full w-full object-cover ${isVideoPlaying ? 'opacity-100' : 'opacity-0'}`}
+                playsInline 
+                autoPlay
+                muted
+              />
+
+              {!isVideoPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center text-white text-center">
                   <p>{t('initializingCamera', 'Initializing camera...')}</p>
                 </div>
               )}
-              
-              {cameraInitialized && (
-                <>
-                  <button 
-                    className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
-                    onClick={handleCapture}
-                    type="button"
-                    aria-label={t('takePicture')}
-                  >
-                    <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
-                  </button>
-                </>
+
+              {isVideoPlaying && (
+                <button 
+                  className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  onClick={handleCapture}
+                  type="button"
+                  aria-label={t('takePicture')}
+                >
+                  <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
+                </button>
               )}
             </div>
           )}
         </div>
-        
+
         {/* Form section - semi-transparent card at the bottom */}
         {!showCameraView && capturedImage && (
           <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-md p-6 rounded-t-xl z-20">
@@ -339,7 +403,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
               <input 
                 type="text" 
                 className="w-full py-3 px-4 bg-transparent border border-white/30 rounded-lg text-white" 
-                placeholder="groceries" 
+                placeholder={t('expensePlaceholder', 'e.g. groceries')} 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />

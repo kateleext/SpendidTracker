@@ -1,4 +1,15 @@
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { MoreVertical, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Expense } from '../types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MemoryCardProps {
   expense: Expense;
@@ -6,6 +17,11 @@ interface MemoryCardProps {
 }
 
 const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const handleImageClick = () => {
     console.log('MemoryCard: Opening image', expense.image_url);
     onImageClick(expense.image_url);
@@ -17,8 +33,48 @@ const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
     currency: 'USD',
   }).format(parseFloat(expense.amount));
 
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async () => {
+      console.log('MemoryCard: Deleting expense', expense.id);
+      const response = await fetch(`/api/expenses/${expense.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete expense');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      console.log('MemoryCard: Expense deleted successfully');
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/budget/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/budget/history'] });
+      
+      toast({
+        title: t('expenseDeleted', 'Expense Deleted'),
+        description: t('expenseDeletedSuccess', 'Your expense has been deleted'),
+      });
+    },
+    onError: (error) => {
+      console.error('MemoryCard: Error deleting expense', error);
+      toast({
+        title: t('error'),
+        description: error.message || t('expenseDeleteFailed', 'Failed to delete expense'),
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const handleDelete = () => {
+    deleteExpenseMutation.mutate();
+  };
+
   return (
-    <div className="memory-card bg-secondary-bg rounded-xl mx-5 mb-5 overflow-hidden shadow-card">
+    <div className="memory-card bg-secondary-bg rounded-xl mx-5 mb-5 overflow-hidden shadow-lg">
       <div className="memory-image-wrapper relative pb-[100%] overflow-hidden">
         <img
           src={expense.image_url}
@@ -26,6 +82,27 @@ const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
           className="memory-image absolute top-0 left-0 w-full h-full object-cover cursor-pointer"
           onClick={handleImageClick}
         />
+        <div className="absolute top-2 right-2">
+          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <button 
+                className="p-1 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                aria-label={t('options')}
+              >
+                <MoreVertical size={18} className="text-white" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white shadow-md rounded-md min-w-[150px]">
+              <DropdownMenuItem 
+                onClick={handleDelete}
+                className="text-red-500 cursor-pointer flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                {t('delete', 'Delete')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="memory-details py-4 px-5">
         <div className="memory-title-row flex justify-between items-center">
