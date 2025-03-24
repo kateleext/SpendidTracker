@@ -100,7 +100,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         {/* Budget Setting */}
         <div className="settings-section mb-5">
           <div className="settings-section-title text-[16px] font-medium text-text-primary mb-3">
-            {t('monthlyBudget')}
+            {t('monthlyBudget')}: ${budgetValue}
           </div>
           <div className="relative">
             <span className="absolute top-2.5 left-3 text-text-secondary">$</span>

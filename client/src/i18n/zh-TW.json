@@ -35,5 +35,12 @@
   "budgetLower": "預算",
   "adjust": "調整",
   "spendingHistory": "支出歷史",
-  "noSpendingHistory": "尚無支出歷史記錄"
+  "noSpendingHistory": "尚無支出歷史記錄",
+  "cameraNotSupported": "不支持相機",
+  "browserDoesNotSupportCamera": "您的瀏覽器不支持相機訪問",
+  "cameraAccessError": "無法訪問您的相機，請檢查權限",
+  "cameraPermissionDenied": "相機訪問被拒絕，請允許相機權限",
+  "noCameraDetected": "未檢測到設備上的相機",
+  "cameraError": "相機錯誤",
+  "errorProcessingImage": "處理圖像時出錯"
 }

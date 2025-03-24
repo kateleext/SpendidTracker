@@ -35,5 +35,12 @@
   "budgetLower": "anggaran",
   "adjust": "Sesuaikan",
   "spendingHistory": "Riwayat Pengeluaran",
-  "noSpendingHistory": "Belum ada riwayat pengeluaran"
+  "noSpendingHistory": "Belum ada riwayat pengeluaran",
+  "cameraNotSupported": "Kamera Tidak Didukung",
+  "browserDoesNotSupportCamera": "Browser Anda tidak mendukung akses kamera",
+  "cameraAccessError": "Tidak dapat mengakses kamera Anda. Silakan periksa izin",
+  "cameraPermissionDenied": "Akses kamera ditolak. Harap izinkan akses kamera",
+  "noCameraDetected": "Tidak ada kamera terdeteksi pada perangkat Anda",
+  "cameraError": "Kesalahan Kamera",
+  "errorProcessingImage": "Kesalahan memproses gambar"
 }

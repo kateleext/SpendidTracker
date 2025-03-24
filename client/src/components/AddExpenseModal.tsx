@@ -32,17 +32,14 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     }
   }, [isOpen, resetCapture]);
   
-  // Separate effect to handle camera initialization - only runs once per modal open
+  // Initialize camera only once when the component first mounts
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout | null = null;
     
-    // Only initialize camera when modal is open and we're in camera view
-    if (isOpen && showCameraView) {
+    // Only initialize camera when modal is open and we're in camera view and not already initialized
+    if (isOpen && showCameraView && !cameraInitialized) {
       console.log('AddExpenseModal: Starting camera initialization sequence');
-      
-      // Make sure any previous streams are stopped
-      stopCamera();
       
       // Init camera with delay to avoid rapid initialization
       initTimeout = setTimeout(async () => {
@@ -68,7 +65,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       }, 500);
     }
     
-    // Cleanup function to handle unmounting or state changes
+    // Cleanup function to handle unmounting or component unload
     return () => {
       mounted = false;
       
@@ -76,14 +73,14 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         clearTimeout(initTimeout);
       }
       
-      // Only stop camera if we're closing the modal or switching views
-      if (!isOpen || !showCameraView) {
-        console.log('AddExpenseModal: Stopping camera in cleanup');
+      // Only fully stop camera when the modal closes
+      if (!isOpen) {
+        console.log('AddExpenseModal: Modal closed, stopping camera');
         stopCamera();
         setCameraInitialized(false);
       }
     };
-  }, [isOpen, showCameraView, startCamera, stopCamera]);
+  }, [isOpen, showCameraView, cameraInitialized, startCamera, stopCamera]);
   
   // Handle capture button click
   const handleCapture = () => {
@@ -212,9 +209,9 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             {showCameraView ? t('snapAnExpense') : (capturedImage ? t('reviewExpense') : t('addExpense'))}
           </h2>
           <button 
-            className="text-[#4a5d44] font-medium hover:text-opacity-80"
+            className={`font-medium ${!showCameraView && capturedImage && amount ? 'text-[#6bbb5c] font-bold' : 'text-gray-400'}`}
             onClick={handleSave}
-            disabled={showCameraView || createExpenseMutation.isPending}
+            disabled={showCameraView || !capturedImage || !amount || createExpenseMutation.isPending}
             type="button"
           >
             {createExpenseMutation.isPending ? t('saving') : t('save')}
@@ -245,14 +242,21 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
               )}
               
               {cameraInitialized && (
-                <button 
-                  className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
-                  onClick={handleCapture}
-                  type="button"
-                  aria-label={t('takePicture')}
-                >
-                  <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
-                </button>
+                <>
+                  <button 
+                    className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
+                    onClick={handleCapture}
+                    type="button"
+                    aria-label={t('takePicture')}
+                  >
+                    <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
+                  </button>
+                  <div className="absolute bottom-28 left-0 right-0 flex justify-center">
+                    <span className="text-white bg-black/40 px-4 py-2 rounded-full text-sm font-medium">
+                      {t('snapAnExpense')}
+                    </span>
+                  </div>
+                </>
               )}
             </div>
           )}

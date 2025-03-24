@@ -35,5 +35,12 @@
   "budgetLower": "budget",
   "adjust": "Adjust",
   "spendingHistory": "Spending History",
-  "noSpendingHistory": "No spending history available yet"
+  "noSpendingHistory": "No spending history available yet",
+  "cameraNotSupported": "Camera Not Supported",
+  "browserDoesNotSupportCamera": "Your browser does not support camera access",
+  "cameraAccessError": "Could not access your camera. Please check permissions",
+  "cameraPermissionDenied": "Camera access was denied. Please allow camera permissions",
+  "noCameraDetected": "No camera detected on your device",
+  "cameraError": "Camera Error",
+  "errorProcessingImage": "Error processing image"
 }
