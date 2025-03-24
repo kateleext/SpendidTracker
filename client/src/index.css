@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --accent: 89 28% 31%;
+  --accent-foreground: 0 0% 100%;
+  --primary: 89 28% 31%;
+  --primary-foreground: 0 0% 100%;
+}
+
 @layer base {
   * {
     @apply border-border;

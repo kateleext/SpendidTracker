@@ -39,36 +39,54 @@ const defaultContextValue: AppContextProps = {
 const AppContext = createContext<AppContextProps>(defaultContextValue);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [tab, setTab] = useState<TabType>('journal');
-  const [view, setView] = useState<ViewType>('daily');
+  const [tab, setTabState] = useState<TabType>('journal');
+  const [view, setViewState] = useState<ViewType>('daily');
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  // Enhanced tab setter with console logging for debugging
+  const setTab = (newTab: TabType) => {
+    console.log('Setting tab to:', newTab);
+    setTabState(newTab);
+  };
+  
+  // Enhanced view setter with console logging for debugging
+  const setView = (newView: ViewType) => {
+    console.log('Setting view to:', newView);
+    setViewState(newView);
+  };
+
   const openImageModal = (imageUrl: string) => {
+    console.log('Opening image modal with:', imageUrl);
     setSelectedImage(imageUrl);
     setIsImageModalOpen(true);
   };
 
   const closeImageModal = () => {
+    console.log('Closing image modal');
     setIsImageModalOpen(false);
     setSelectedImage(null);
   };
 
   const openSettingsModal = () => {
+    console.log('Opening settings modal');
     setIsSettingsModalOpen(true);
   };
 
   const closeSettingsModal = () => {
+    console.log('Closing settings modal');
     setIsSettingsModalOpen(false);
   };
 
   const openAddExpenseModal = () => {
+    console.log('Opening add expense modal');
     setIsAddExpenseModalOpen(true);
   };
 
   const closeAddExpenseModal = () => {
+    console.log('Closing add expense modal');
     setIsAddExpenseModalOpen(false);
   };
 
