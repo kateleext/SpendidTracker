@@ -18,9 +18,12 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const [amount, setAmount] = useState<string>('');
   const [title, setTitle] = useState<string>('groceries');
   const [showCameraView, setShowCameraView] = useState<boolean>(true);
+  const [cameraInitialized, setCameraInitialized] = useState<boolean>(false);
   
   // Initialize camera when modal opens
   useEffect(() => {
+    let mounted = true;
+    
     if (isOpen) {
       console.log('AddExpenseModal: Modal opened, initializing camera');
       resetCapture();
@@ -29,16 +32,28 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       setShowCameraView(true);
       
       const initCamera = async () => {
-        await startCamera();
+        try {
+          const success = await startCamera();
+          if (mounted && success) {
+            setCameraInitialized(true);
+          }
+        } catch (error) {
+          console.error('Failed to initialize camera:', error);
+          if (mounted) {
+            setCameraInitialized(false);
+          }
+        }
       };
       
       initCamera();
     } else {
       console.log('AddExpenseModal: Modal closed, stopping camera');
       stopCamera();
+      setCameraInitialized(false);
     }
     
     return () => {
+      mounted = false;
       stopCamera();
     };
   }, [isOpen, startCamera, stopCamera, resetCapture]);
@@ -70,6 +85,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       console.log('AddExpenseModal: Expense saved successfully');
       queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/budget/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/budget/history'] });
       
       toast({
         title: t('expenseAdded'),
@@ -109,24 +125,33 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       return;
     }
     
-    // Convert data URL to Blob
-    const fetchResponse = await fetch(capturedImage);
-    const blob = await fetchResponse.blob();
-    
-    // Create form data
-    const formData = new FormData();
-    formData.append('image', blob, 'expense.jpg');
-    formData.append('amount', amount);
-    formData.append('title', title || 'groceries');
-    
-    // Submit the form
-    createExpenseMutation.mutate(formData);
+    try {
+      // Convert data URL to Blob
+      const fetchResponse = await fetch(capturedImage);
+      const blob = await fetchResponse.blob();
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('image', blob, 'expense.jpg');
+      formData.append('amount', amount);
+      formData.append('title', title || 'groceries');
+      
+      // Submit the form
+      createExpenseMutation.mutate(formData);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast({
+        title: t('error'),
+        description: t('errorProcessingImage'),
+        variant: 'destructive',
+      });
+    }
   };
   
   // Handle cancel button click
   const handleCancel = () => {
     console.log('AddExpenseModal: Cancel button clicked');
-    if (!showCameraView && !capturedImage) {
+    if (!showCameraView && capturedImage) {
       setShowCameraView(true);
       startCamera();
     } else {
@@ -140,17 +165,17 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
 
   return (
     <div id="addExpenseModal" className="fixed inset-0 bg-black/90 z-50 flex flex-col">
-      <div className="bg-white w-full h-full overflow-auto">
+      <div className="w-full h-full relative overflow-hidden">
         {/* Header with close button */}
-        <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-white border-b border-gray-200">
+        <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-transparent">
           <button 
-            className="text-gray-500 hover:text-gray-700"
+            className="text-white hover:text-gray-200 font-medium"
             onClick={handleCancel}
             type="button"
           >
             {t('cancel')}
           </button>
-          <h2 className="text-lg font-semibold">{t('addExpense')}</h2>
+          <h2 className="text-lg font-semibold text-white">{t('addExpense')}</h2>
           <button 
             className="text-accent font-medium hover:text-accent-light"
             onClick={handleSave}
@@ -161,8 +186,8 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
           </button>
         </div>
         
-        {/* Camera/Image section - taller in fullscreen */}
-        <div className="add-expense-preview w-full h-72 bg-gray-200">
+        {/* Full-screen Camera/Image section */}
+        <div className="absolute inset-0">
           {capturedImage ? (
             <img 
               src={capturedImage} 
@@ -171,53 +196,63 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             />
           ) : (
             <div id="cameraPreview" className="w-full h-full flex items-center justify-center bg-black">
-              <video 
-                ref={videoRef} 
-                className="h-full w-full object-cover" 
-                playsInline 
-              />
-              <button 
-                className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
-                onClick={handleCapture}
-                type="button"
-                aria-label={t('takePicture')}
-              >
-                <div className="w-14 h-14 rounded-full border-2 border-accent"></div>
-              </button>
+              {cameraInitialized ? (
+                <video 
+                  ref={videoRef} 
+                  className="h-full w-full object-cover" 
+                  playsInline 
+                  autoPlay
+                />
+              ) : (
+                <div className="text-white text-center">
+                  <p>{t('initializingCamera', 'Initializing camera...')}</p>
+                </div>
+              )}
+              
+              {cameraInitialized && (
+                <button 
+                  className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  onClick={handleCapture}
+                  type="button"
+                  aria-label={t('takePicture')}
+                >
+                  <div className="w-14 h-14 rounded-full border-2 border-accent"></div>
+                </button>
+              )}
             </div>
           )}
         </div>
         
-        {/* Form section */}
-        <div className="p-6">
-          <div className="mb-6">
-            <label className="block text-text-secondary text-sm mb-2">{t('amount')}</label>
-            <div className="relative">
-              <span className="absolute top-4 left-4 text-text-secondary text-xl">$</span>
+        {/* Form section - semi-transparent card at the bottom */}
+        {!showCameraView && capturedImage && (
+          <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-6 rounded-t-xl">
+            <div className="mb-6">
+              <label className="block text-white text-sm mb-2">{t('amount')}</label>
+              <div className="relative">
+                <span className="absolute top-4 left-4 text-white text-xl">$</span>
+                <input 
+                  type="number" 
+                  className="w-full py-3 px-10 bg-transparent border border-white/30 rounded-lg text-3xl font-medium text-white" 
+                  placeholder="0.00" 
+                  step="0.01" 
+                  min="0"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-white text-sm mb-2">{t('description')}</label>
               <input 
-                type="number" 
-                className="w-full py-3 px-10 border border-gray-300 rounded-lg text-2xl font-medium" 
-                placeholder="0.00" 
-                step="0.01" 
-                min="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={showCameraView}
+                type="text" 
+                className="w-full py-3 px-4 bg-transparent border border-white/30 rounded-lg text-white" 
+                placeholder="groceries" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
             </div>
           </div>
-          <div className="mb-6">
-            <label className="block text-text-secondary text-sm mb-2">{t('description')}</label>
-            <input 
-              type="text" 
-              className="w-full py-3 px-4 border border-gray-300 rounded-lg" 
-              placeholder="groceries" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={showCameraView}
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

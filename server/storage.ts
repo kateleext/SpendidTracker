@@ -178,6 +178,7 @@ export class DatabaseStorage implements IStorage {
       
       const spent = expenseResult[0]?.total ? Number(expenseResult[0].total) : 0;
       
+      // Only add months with actual spending to the results
       results.push({
         month,
         year,

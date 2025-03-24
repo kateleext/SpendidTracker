@@ -9,10 +9,13 @@ interface BudgetHistoryProps {
 const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
   const { t } = useTranslation();
   
+  // Filter out months with no spending
+  const itemsWithSpending = historyItems.filter(item => item.spent > 0);
+  
   // Group history items by year
   const groupedByYear: Record<number, BudgetHistoryItem[]> = {};
   
-  historyItems.forEach(item => {
+  itemsWithSpending.forEach(item => {
     if (!groupedByYear[item.year]) {
       groupedByYear[item.year] = [];
     }
@@ -44,13 +47,24 @@ const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
                 maximumFractionDigits: 0
               }).format(item.spent);
               
-              // Generate random points for chart line
-              // In a real app, these would be actual daily spending points
-              const generateRandomPoints = () => {
+              // Generate chart points based on spending amount
+              // Height is relative to the spending amount
+              const generateChartPoints = () => {
+                const MAX_HEIGHT = 25; // Maximum height in the SVG
                 const points = [];
-                for (let i = 0; i < 6; i++) {
-                  points.push(`${i * 20},${Math.floor(Math.random() * 20) + 5}`);
+                const spendingAmount = item.spent;
+                
+                // We'll create a simple upward trend line ending at the actual amount
+                for (let i = 0; i < 5; i++) {
+                  const x = i * 20;
+                  const heightFactor = i / 4; // 0 to 1 as i goes from 0 to 4
+                  const y = MAX_HEIGHT - (heightFactor * (spendingAmount % MAX_HEIGHT)) - 3;
+                  points.push(`${x},${y}`);
                 }
+                
+                // Add the final point
+                points.push(`100,${Math.max(2, MAX_HEIGHT - (spendingAmount % MAX_HEIGHT))}`);
+                
                 return points.join(' ');
               };
               
@@ -67,7 +81,7 @@ const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
                   </div>
                   <div className="history-chart flex-grow h-[28px] relative">
                     <svg className="history-chart-line absolute top-0 left-0 w-full h-full" viewBox="0 0 100 28" preserveAspectRatio="none">
-                      <polyline points={generateRandomPoints()} fill="none" stroke="#5d7052" strokeWidth="1.5" />
+                      <polyline points={generateChartPoints()} fill="none" stroke="#4a5d44" strokeWidth="1.5" />
                     </svg>
                   </div>
                 </div>
@@ -77,7 +91,7 @@ const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
         );
       })}
       
-      {historyItems.length === 0 && (
+      {itemsWithSpending.length === 0 && (
         <div className="text-center p-4 text-text-secondary">
           {t('noSpendingHistory')}
         </div>
