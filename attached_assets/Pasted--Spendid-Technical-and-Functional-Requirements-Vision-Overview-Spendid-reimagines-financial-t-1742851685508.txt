@@ -1,0 +1,390 @@
+# Spendid: Technical and Functional Requirements
+
+## Vision Overview
+
+Spendid reimagines financial tracking for those who find traditional budgeting apps overwhelming. By focusing on visual memories rather than precise accounting, we create an intuitive experience that captures both spending and the moments that matter. Our app transforms expense tracking from a chore into a natural extension of how people already document their lives through photos.
+
+Spendid is built around three fundamental principles:
+1. **Photos First**: Every expense is documented through images that capture not just what was purchased, but the moments and memories created.
+2. **Simplicity Over Precision**: We prioritize ease of use over penny-perfect accounting, making financial tracking accessible to everyone.
+3. **Narrative Finance**: Expenses tell a story about your life, connecting purchases to experiences and memories.
+
+This document outlines the technical requirements and functional specifications for implementing the Spendid application as a React PWA based on the provided UI mockup.
+
+## Target Audience
+
+Spendid is designed primarily for:
+- Technology casual users who primarily use smartphones for social media and communication
+- Domestic helpers in Hong Kong who need a simple way to document household expenses
+- People who value the story behind their purchases more than precise accounting
+- Visual thinkers who respond better to images than spreadsheets
+
+These users typically have limited experience with financial applications, are comfortable taking and sharing photos, desire simple interfaces without financial jargon, and value trust and transparency in financial matters.
+
+## Technology Stack
+
+### Frontend
+- **React** (Create React App or Next.js)
+- **PWA capabilities**:
+  - Service Workers
+  - Web App Manifest
+  - Offline support
+- **UI Framework**: Custom components as shown in mockup
+- **State Management**: Redux or Context API
+- **CSS**: CSS-in-JS or styled-components matching the provided styles
+- **i18next**: For multilingual support
+
+### Backend
+- **Node.js** with Express
+- **PostgreSQL** database
+- **RESTful API** architecture
+- **Image Storage**: Local storage or cloud service (e.g., AWS S3)
+
+## Database Schema
+
+### Users Table
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100),
+  monthly_budget DECIMAL(10,2) DEFAULT 2500.00,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create default user (ID=1)
+INSERT INTO users (id, name, email, monthly_budget) 
+VALUES (1, 'Default User', 'user@example.com', 2500.00);
+```
+
+Note: Language preference is not stored in the database but is detected from the device and stored in browser localStorage.
+
+### Expenses Table
+```sql
+CREATE TABLE expenses (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) DEFAULT 1,
+  amount DECIMAL(10,2) NOT NULL,
+  title VARCHAR(100) NOT NULL DEFAULT 'groceries',
+  image_url VARCHAR(255) NOT NULL,
+  image_thumbnail_url VARCHAR(255),
+  expense_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Monthly Budgets Table
+```sql
+CREATE TABLE monthly_budgets (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) DEFAULT 1,
+  month INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  budget_amount DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, month, year)
+);
+```
+
+## Key Features
+
+### 1. Progressive Web App Implementation
+
+Requirements:
+- Create `manifest.json` with app details:
+  ```json
+  {
+    "name": "Spendid",
+    "short_name": "Spendid",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f8f9fa",
+    "theme_color": "#5d7052",
+    "icons": [
+      {
+        "src": "icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  ```
+- Enable "Add to Home Screen" functionality
+- Basic service worker registration for future expansion
+- Focus on online-only functionality for the initial prototype
+- No offline caching required in the initial version
+
+### 2. Multilingual Support
+
+Implement support for:
+- English (en)
+- Traditional Chinese (zh-TW)
+- Bahasa Indonesia (id)
+
+Implementation:
+- Use i18next with React bindings and language detection
+- Default language should be based on device/browser language detection (navigator.language)
+- Create translation files for all UI text elements
+- Store language preference locally after user selection
+- Update language selection when `.language-option` is clicked
+- Implement bidirectional text support if needed
+- Fall back to English if detected language is not supported
+
+### 3. Expense Capture Workflow
+
+Requirements:
+- When `.add-log-button` is clicked:
+  1. Access device camera using `navigator.mediaDevices.getUserMedia()`
+  2. Create a camera capture interface
+  3. After photo capture, show confirmation modal with:
+     - Image preview
+     - Amount input field (numeric input)
+     - Description field (text input) with "groceries" as default
+     - Confirm and Cancel buttons
+  4. On confirmation:
+     - Upload image to storage
+     - Create thumbnail version
+     - Save to database
+     - Update UI with new expense
+
+### 4. Budget Management
+
+Requirements:
+- Calculate remaining budget using:
+  ```javascript
+  const remainingBudget = totalBudget - currentMonthExpenses;
+  ```
+- Update `.budget-value` with formatted remaining amount
+- Set `.budget-bar-fill` width to percentage of budget spent:
+  ```javascript
+  const percentSpent = Math.min(100, (currentMonthExpenses / totalBudget) * 100);
+  // Set width CSS property to `${percentSpent}%`
+  ```
+- Handle negative budgets (overspending)
+- Update budget amount when settings are saved
+
+### 5. Expense Timeline Views
+
+#### Daily View
+Structure:
+- Group expenses by date
+- For each date:
+  - Create `.day-header` with formatted date
+  - Add "Today" badge if date is today
+  - Create `.memory-card` for each expense with:
+    - `.memory-image` set to expense's image URL
+    - `.memory-title` set to expense title
+    - `.memory-amount` set to formatted amount
+
+#### Monthly View
+Structure:
+- Group expenses by month
+- For each month, create `.month-card`
+- For each day with expenses:
+  - Create `.month-day-row`
+  - Set `.month-day-number` to day number
+  - Set `.month-day-amount` to total amount for that day
+  - Add `.month-thumbnail` for each expense image
+
+### 6. Image Handling
+
+Requirements:
+- Capture images at appropriate resolution
+- Generate thumbnails for monthly view
+- Implement lazy loading for images
+- Cache images for offline viewing
+- Implement full-screen image modal
+- Enable image downloading
+
+## Component Structure
+
+Key React components to implement:
+
+```
+App
+├── Navigation
+│   ├── NavTabs
+│   └── ViewToggle
+├── BudgetView
+│   ├── BudgetHero
+│   │   ├── BudgetValue
+│   │   ├── BudgetBar
+│   │   └── BudgetDetails
+│   └── BudgetHistory
+│       └── HistoryItem
+├── DiaryView
+│   ├── DiaryDaily
+│   │   ├── DayHeader
+│   │   └── MemoryCard
+│   └── DiaryMonthly
+│       ├── MonthCard
+│       └── DayRow
+├── Modals
+│   ├── ImageModal
+│   ├── SettingsModal
+│   └── AddExpenseModal
+└── Camera
+    └── CameraCapture
+```
+
+## API Endpoints
+
+### User Endpoints
+- `GET /api/user` - Get default user info (ID=1)
+- `PUT /api/user/budget` - Update user budget setting (no language settings in backend)
+
+### Expense Endpoints
+- `GET /api/expenses?startDate=X&endDate=Y` - List expenses with date filter
+- `POST /api/expenses` - Create new expense
+- `GET /api/expenses/:id` - Get expense details
+- `DELETE /api/expenses/:id` - Delete expense
+
+### Budget Endpoints
+- `GET /api/budget/current` - Get current month's budget and spending
+- `GET /api/budget/history` - Get historical budget data
+- `PUT /api/budget` - Update budget amount
+
+## Element Mapping Reference
+
+### Navigation Elements
+- `.nav-container` - Top navigation container
+- `.nav-tab` - Tab buttons (Journal/Budget)
+- `.view-toggle` - Container for view toggle buttons
+- `.view-toggle-button` - Individual view toggle buttons
+
+### Budget View Elements
+- `#budget-view` - Main budget view container
+- `.budget-value` - Displays remaining budget amount
+- `.budget-caption` - Text below budget amount
+- `.budget-bar-container` - Container for progress bar
+- `.budget-bar-fill` - Fill element for progress bar
+- `.budget-details` - Text showing amount spent
+- `.budget-limit` - Text showing total budget
+- `.history-container` - Container for budget history
+- `.history-item` - Individual history item
+- `.history-chart-line` - SVG chart for spending pattern
+
+### Daily View Elements
+- `#diary-daily-view` - Main daily view container
+- `.day-header` - Date header for group of expenses
+- `.day-header-date` - Date text element
+- `.day-header-badge` - "Today" badge
+- `.memory-card` - Container for individual expense
+- `.memory-image-wrapper` - Container for expense image
+- `.memory-image` - Expense image element
+- `.memory-title` - Expense description
+- `.memory-amount` - Expense amount
+
+### Monthly View Elements
+- `#diary-monthly-view` - Main monthly view container
+- `.month-card` - Card for month grouping
+- `.month-title` - Month and year heading
+- `.month-day-row` - Row for each day with expenses
+- `.month-day-number` - Day number element
+- `.month-day-amount` - Total amount for day
+- `.month-day-images` - Container for expense thumbnails
+- `.month-thumbnail` - Individual expense thumbnail
+
+### Modal Elements
+- `#imageModal` - Full screen image modal
+- `#settingsModal` - Settings modal
+- `.modal-image` - Image in image modal
+- `.budget-input` - Budget amount input field
+- `.language-option` - Language selection options
+
+### Action Elements
+- `.add-log-button` - Button to add new expense
+- `.settings-save` - Save settings button
+- `.settings-cancel` - Cancel settings button
+
+## User Experience Principles
+
+When implementing Spendid, the following UX principles should be prioritized:
+
+1. **Reduce Cognitive Load**: Minimize text entry, numerical input, and complex decisions.
+2. **Familiar Patterns**: Leverage interaction patterns from photo and social media apps.
+3. **Emotional Resonance**: Design for the emotional aspect of spending, not just the financial impact.
+4. **Progressive Disclosure**: Start with extreme simplicity, gradually introduce optional complexity.
+5. **Forgiveness**: Allow imprecision and corrections without judgment or complexity.
+6. **Delightful Discoveries**: Surface spending memories in unexpected but meaningful ways.
+
+## Implementation Guidelines
+
+1. **User Authentication**:
+   - Skip login implementation
+   - Use ID=1 for all operations
+   - No authentication required
+
+2. **Camera Implementation**:
+   ```javascript
+   // Basic camera implementation
+   async function openCamera() {
+     try {
+       const stream = await navigator.mediaDevices.getUserMedia({ 
+         video: { facingMode: 'environment' } 
+       });
+       // Connect stream to video element
+       videoElement.srcObject = stream;
+     } catch (error) {
+       console.error('Error accessing camera:', error);
+     }
+   }
+   ```
+
+3. **Budget Calculation Logic**:
+   ```javascript
+   function calculateBudgetStats(budget, expenses) {
+     const totalBudget = budget.amount;
+     const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+     const remaining = totalBudget - totalSpent;
+     const percentSpent = Math.min(100, (totalSpent / totalBudget) * 100);
+     
+     return {
+       totalBudget,
+       totalSpent,
+       remaining,
+       percentSpent
+     };
+   }
+   ```
+
+4. **Network Requirements**:
+   - Online connection required for app functionality
+   - Display appropriate error messages when connection is lost
+   - Design with consideration for future offline capabilities
+
+5. **Image Optimization**:
+   - Compress images before upload
+   - Generate thumbnails for list views
+   - Use lazy loading for images in timeline
+
+## Development Priorities
+
+1. Core structure and navigation
+2. Budget view implementation
+3. Camera capture and expense logging
+4. Daily and monthly expense views
+5. Settings and language support
+6. Basic PWA implementation (manifest and homescreen installation)
+7. Performance optimization
+
+Note: Offline functionality is not required for the initial prototype and can be added in a future version.
+
+## Testing Requirements
+
+1. Test on both iOS and Android devices
+2. Verify PWA installability and "Add to Home Screen" functionality
+3. Verify that the app works correctly with an internet connection
+4. Verify multilingual support
+5. Test camera functionality on various devices
+6. Ensure appropriate error messages appear when connection is lost
+
+This document provides the technical specifications needed to implement the Expense Journal application based on the provided mockup. The implementation should focus on simplicity, visual engagement, and creating emotional connections to spending rather than precise accounting.

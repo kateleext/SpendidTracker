@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Journal - Memory-Focused Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        :root {
+            --primary-bg: #f8f9fa;
+            --secondary-bg: #ffffff;
+            --accent-color: #5d7052;
+            --accent-light: #7a8c6f;
+            --accent-gradient: linear-gradient(45deg, #5d7052, #7a8c6f);
+            --text-primary: #333333;
+            --text-secondary: #777777;
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --border-radius: 16px;
+            --border-radius-sm: 10px;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+        }
+        
+        .app-container {
+            max-width: 440px;
+            margin: 0 auto;
+            background-color: var(--primary-bg);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .nav-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: var(--primary-bg);
+            padding: 15px 0;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            margin: 0 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            color: var(--accent-color);
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .diary-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            z-index: 5;
+        }
+        
+        .view-toggle {
+            display: flex;
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 20px;
+            padding: 2px;
+            overflow: hidden;
+        }
+        
+        .view-toggle-button {
+            padding: 6px 12px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        
+        .view-toggle-button.active {
+            background-color: var(--secondary-bg);
+            color: var(--accent-color);
+        }
+        
+        .view-toggle-button svg {
+            fill: currentColor;
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+        }
+        
+        /* Budget View Styles */
+        .budget-hero {
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .budget-value {
+            font-size: 72px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0 5px;
+            line-height: 1;
+        }
+        
+        .budget-caption {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+        
+        .budget-bar-container {
+            background-color: rgba(0,0,0,0.05);
+            height: 10px;
+            border-radius: 5px;
+            margin: 0 15px 10px;
+            overflow: hidden;
+        }
+        
+        .budget-bar-fill {
+            height: 100%;
+            width: 65%;
+            background-image: var(--accent-gradient);
+            border-radius: 5px;
+        }
+        
+        .budget-details {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        
+        .budget-limit {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        .budget-limit a {
+            color: var(--accent-color);
+            text-decoration: none;
+            margin-left: 5px;
+            font-weight: 500;
+        }
+        
+        .section-title {
+            margin: 20px 20px 15px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .history-container {
+            margin: 0 20px;
+        }
+        
+        .history-year {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 5px 0;
+            margin: 15px 0 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .history-item {
+            display: flex;
+            align-items: center;
+            background-color: var(--secondary-bg);
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        
+        .history-month {
+            font-size: 14px;
+            font-weight: 500;
+            width: 35px;
+            color: var(--text-primary);
+        }
+        
+        .history-amount {
+            font-size: 15px;
+            font-weight: 600;
+            margin-right: 15px;
+            color: var(--text-primary);
+            width: 70px;
+        }
+        
+        .history-chart {
+            flex-grow: 1;
+            height: 28px;
+            position: relative;
+        }
+        
+        .history-chart-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .history-chart-line polyline {
+            fill: none;
+            stroke: var(--accent-color);
+            stroke-width: 1.5;
+        }
+        
+        /* Daily View Styles */
+        .day-header {
+            padding: 15px 20px 10px;
+            font-size: 22px;
+            font-weight: 600;
+            background-color: var(--primary-bg);
+            position: sticky;
+            top: 85px;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+        }
+        
+        .day-header-date {
+            color: var(--text-primary);
+        }
+        
+        .day-header-badge {
+            margin-left: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            opacity: 0.9;
+        }
+        
+        .memory-card {
+            background-color: var(--secondary-bg);
+            border-radius: var(--border-radius);
+            margin: 0 20px 20px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .memory-image-wrapper {
+            position: relative;
+            padding-bottom: 100%; /* Square aspect ratio */
+            overflow: hidden;
+        }
+        
+        .memory-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .memory-details {
+            padding: 16px 20px;
+        }
+        
+        .memory-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .memory-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .memory-amount {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        /* Monthly View Styles - Horizontal Layout */
+        .month-card {
+            background-color: var(--secondary-bg);
+            border-radius: var(--border-radius);
+            margin: 8px 20px;
+            padding: 15px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .month-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        
+        .month-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .month-day-row {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .month-day-number {
+            width: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .month-day-amount {
+            width: 55px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent-color);
+            text-align: right;
+            padding-right: 12px;
+        }
+        
+        .month-day-images {
+            display: flex;
+            flex-grow: 1;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 5px 0;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .month-day-images::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .month-thumbnail {
+            flex: 0 0 auto;
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #eee;
+            cursor: pointer;
+        }
+        
+        .month-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Image Modal Styles */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .image-modal.active {
+            display: flex;
+        }
+        
+        .modal-image-container {
+            max-width: 90%;
+            max-height: 80%;
+            position: relative;
+        }
+        
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .modal-download {
+            margin-top: 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .modal-download svg {
+            margin-right: 6px;
+        }
+        
+        /* Settings Modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .settings-modal.active {
+            display: flex;
+        }
+        
+        .settings-modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .settings-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        
+        .settings-section-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .budget-input-group {
+            margin-bottom: 15px;
+        }
+        
+        .budget-input-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .budget-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .language-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .language-option {
+            flex: 1 0 calc(50% - 10px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .language-option.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        
+        .settings-modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .settings-modal-button {
+            padding: 12px 0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .settings-cancel {
+            color: var(--text-secondary);
+            background-color: #f5f5f5;
+            margin-right: 10px;
+        }
+        
+        .settings-save {
+            color: white;
+            background-color: var(--accent-color);
+        }
+        
+        .add-log-button {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 26px;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .add-log-button svg {
+            margin-right: 8px;
+        }
+        
+        /* Views visibility */
+        #budget-view, #diary-daily-view, #diary-monthly-view {
+            display: none;
+        }
+        
+        #budget-view.active, #diary-daily-view.active, #diary-monthly-view.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="nav-container">
+            <div class="nav-header">
+                <svg class="settings-icon" onclick="showSettingsModal()" width="24" height="24" viewBox="0 0 24 24">
+                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"></path>
+                    <path d="M19.4 15C19.1277 15.6171 19.2583 16.3378 19.73 16.82L19.79 16.88C20.1656 17.2551 20.3767 17.7542 20.3767 18.275C20.3767 18.7958 20.1656 19.2949 19.79 19.67C19.4149 20.0456 18.9158 20.2567 18.395 20.2567C17.8742 20.2567 17.3751 20.0456 17 19.67L16.94 19.61C16.4578 19.1383 15.7371 19.0077 15.12 19.28C14.5176 19.5398 14.1431 20.1452 14.14 20.8V21C14.14 22.0843 13.2643 22.96 12.18 22.96C11.0957 22.96 10.22 22.0843 10.22 21V20.91C10.2022 20.1966 9.79078 19.5603 9.15 19.33C8.53292 19.0577 7.81219 19.1883 7.33 19.66L7.27 19.72C6.89493 20.0956 6.39582 20.3067 5.875 20.3067C5.35418 20.3067 4.85507 20.0956 4.48 19.72C4.10442 19.3449 3.89335 18.8458 3.89335 18.325C3.89335 17.8042 4.10442 17.3051 4.48 16.93L4.54 16.87C5.01174 16.3878 5.14231 15.6671 4.87 15.05C4.61019 14.4476 4.00476 14.0731 3.35 14.07H3C1.9157 14.07 1.04 13.1943 1.04 12.11C1.04 11.0257 1.9157 10.15 3 10.15H3.09C3.80344 10.1322 4.43969 9.72078 4.67 9.08C4.94231 8.46292 4.81174 7.74219 4.34 7.26L4.28 7.2C3.90442 6.82493 3.69335 6.32582 3.69335 5.805C3.69335 5.28418 3.90442 4.78507 4.28 4.41C4.65507 4.03442 5.15418 3.82335 5.675 3.82335C6.19582 3.82335 6.69493 4.03442 7.07 4.41L7.13 4.47C7.61219 4.94174 8.33292 5.07231 8.95 4.8C9.55237 4.5402 9.92689 3.93477 9.93 3.28V3.18C9.93 2.09568 10.8057 1.22 11.89 1.22C12.9743 1.22 13.85 2.09568 13.85 3.18V3.27C13.8531 3.92477 14.2276 4.5302 14.83 4.79C15.4471 5.06231 16.1678 4.93174 16.65 4.46L16.71 4.4C17.0851 4.02442 17.5842 3.81335 18.105 3.81335C18.6258 3.81335 19.1249 4.02442 19.5 4.4C19.8756 4.77507 20.0867 5.27418 20.0867 5.795C20.0867 6.31582 19.8756 6.81493 19.5 7.19L19.44 7.25C18.9683 7.73219 18.8377 8.45292 19.11 9.07V9.07C19.3698 9.67237 19.9752 10.0469 20.63 10.05H20.73C21.8143 10.05 22.69 10.9257 22.69 12.01C22.69 13.0943 21.8143 13.97 20.73 13.97H20.64C19.9852 13.9731 19.3798 14.3476 19.12 14.95"></path>
+                </svg>
+            </div>
+            <div class="nav-tabs">
+                <div class="nav-tab active" onclick="showMainView('diary-daily-view')">Journal</div>
+                <div class="nav-tab" onclick="showMainView('budget-view')">Budget</div>
+            </div>
+        </div>
+        
+        <div class="content-container">
+            <!-- Budget View -->
+            <div id="budget-view">
+                <div class="budget-hero">
+                    <div class="budget-value">$153</div>
+                    <div class="budget-caption">left in budget</div>
+                    
+                    <div class="budget-bar-container">
+                        <div class="budget-bar-fill"></div>
+                    </div>
+                    
+                    <div class="budget-details">$2347 spent in the past 20 days</div>
+                    <div class="budget-limit">out of $2500 budget <a href="#" onclick="showSettingsModal(); return false;">change</a></div>
+                </div>
+                
+                <div class="section-title">Budget History</div>
+                
+                <div class="history-container">
+                    <div class="history-year">2025</div>
+                    <div class="history-item">
+                        <div class="history-month">Feb</div>
+                        <div class="history-amount">$2,346</div>
+                        <div class="history-chart">
+                            <svg class="history-chart-line" viewBox="0 0 100 28" preserveAspectRatio="none">
+                                <polyline points="0,20 5,12 10,16 15,11 20,6 25,14 30,10 35,7 40,13 45,5 50,10 55,14 60,8 65,12 70,15 75,10 80,14 85,16 90,12 95,8 100,11" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-month">Jan</div>
+                        <div class="history-amount">$2,872</div>
+                        <div class="history-chart">
+                            <svg class="history-chart-line" viewBox="0 0 100 28" preserveAspectRatio="none">
+                                <polyline points="0,14 5,10 10,5 15,9 20,11 25,6 30,10 35,15 40,7 45,5 50,15 55,10 60,12 65,8 70,5 75,10 80,5 85,11 90,15 95,10 100,8" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="history-year">2024</div>
+                    <div class="history-item">
+                        <div class="history-month">Dec</div>
+                        <div class="history-amount">$2,405</div>
+                        <div class="history-chart">
+                            <svg class="history-chart-line" viewBox="0 0 100 28" preserveAspectRatio="none">
+                                <polyline points="0,10 5,16 10,11 15,5 20,10 25,18 30,15 35,7 40,5 45,11 50,8 55,12 60,6 65,5 70,3 75,8 80,14 85,10 90,5 95,15 100,10" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-month">Nov</div>
+                        <div class="history-amount">$2,198</div>
+                        <div class="history-chart">
+                            <svg class="history-chart-line" viewBox="0 0 100 28" preserveAspectRatio="none">
+                                <polyline points="0,15 5,8 10,10 15,13 20,15 25,5 30,10 35,14 40,8 45,3 50,10 55,15 60,13 65,7 70,5 75,10 80,13 85,7 90,9 95,12 100,15" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Diary Daily View -->
+            <div id="diary-daily-view" class="active">
+                <div class="diary-header">
+                    <div class="view-toggle">
+                        <div class="view-toggle-button active" onclick="showDiaryView('daily')">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3" y="3" width="7" height="7" rx="2" />
+                                <rect x="14" y="3" width="7" height="7" rx="2" />
+                                <rect x="3" y="14" width="7" height="7" rx="2" />
+                                <rect x="14" y="14" width="7" height="7" rx="2" />
+                            </svg>
+                            Daily
+                        </div>
+                        <div class="view-toggle-button" onclick="showDiaryView('monthly')">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="2" rx="1" />
+                                <rect x="3" y="9" width="18" height="2" rx="1" />
+                                <rect x="3" y="14" width="18" height="2" rx="1" />
+                                <rect x="3" y="19" width="18" height="2" rx="1" />
+                            </svg>
+                            Monthly
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-header">
+                    <div class="day-header-date">Mar 20</div>
+                    <div class="day-header-badge">Today</div>
+                </div>
+                
+                <div class="memory-card">
+                    <div class="memory-image-wrapper">
+                        <img src="/api/placeholder/400/400" alt="Energy drink after ping pong" class="memory-image" onclick="showImageModal(this)">
+                    </div>
+                    <div class="memory-details">
+                        <div class="memory-title-row">
+                            <div class="memory-title">Drink after ping pong</div>
+                            <div class="memory-amount">$10</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="memory-card">
+                    <div class="memory-image-wrapper">
+                        <img src="/api/placeholder/400/400" alt="Groceries photo" class="memory-image" onclick="showImageModal(this)">
+                    </div>
+                    <div class="memory-details">
+                        <div class="memory-title-row">
+                            <div class="memory-title">Groceries</div>
+                            <div class="memory-amount">$300</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-header">
+                    <div class="day-header-date">Mar 18</div>
+                </div>
+                
+                <div class="memory-card">
+                    <div class="memory-image-wrapper">
+                        <img src="/api/placeholder/400/400" alt="Lunch photo" class="memory-image" onclick="showImageModal(this)">
+                    </div>
+                    <div class="memory-details">
+                        <div class="memory-title-row">
+                            <div class="memory-title">Lunch</div>
+                            <div class="memory-amount">$28</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Diary Monthly View -->
+            <div id="diary-monthly-view">
+                <div class="diary-header">
+                    <div class="view-toggle">
+                        <div class="view-toggle-button" onclick="showDiaryView('daily')">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3" y="3" width="7" height="7" rx="2" />
+                                <rect x="14" y="3" width="7" height="7" rx="2" />
+                                <rect x="3" y="14" width="7" height="7" rx="2" />
+                                <rect x="14" y="14" width="7" height="7" rx="2" />
+                            </svg>
+                            Daily
+                        </div>
+                        <div class="view-toggle-button active" onclick="showDiaryView('monthly')">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="2" rx="1" />
+                                <rect x="3" y="9" width="18" height="2" rx="1" />
+                                <rect x="3" y="14" width="18" height="2" rx="1" />
+                                <rect x="3" y="19" width="18" height="2" rx="1" />
+                            </svg>
+                            Monthly
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="month-card">
+                    <div class="month-title">March 2025</div>
+                    <div class="month-rows">
+                        <div class="month-day-row">
+                            <div class="month-day-number">2</div>
+                            <div class="month-day-amount">$150</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">3</div>
+                            <div class="month-day-amount">$75</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">4</div>
+                            <div class="month-day-amount">$150</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">6</div>
+                            <div class="month-day-amount">$42</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">8</div>
+                            <div class="month-day-amount">$120</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">10</div>
+                            <div class="month-day-amount">$55</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">11</div>
+                            <div class="month-day-amount">$85</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">13</div>
+                            <div class="month-day-amount">$200</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">15</div>
+                            <div class="month-day-amount">$60</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">18</div>
+                            <div class="month-day-amount">$28</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">19</div>
+                            <div class="month-day-amount">$45</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="month-day-row">
+                            <div class="month-day-number">20</div>
+                            <div class="month-day-amount">$310</div>
+                            <div class="month-day-images">
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                                <div class="month-thumbnail">
+                                    <img src="/api/placeholder/50/50" alt="Expense" onclick="showImageModal(this)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image Modal -->
+            <div class="image-modal" id="imageModal">
+                <div class="modal-image-container">
+                    <button class="modal-close" onclick="closeImageModal()">×</button>
+                    <img src="" alt="Full size image" class="modal-image" id="modalImage">
+                </div>
+                <button class="modal-download">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 16L12 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M8 12L12 16L16 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M20 20H4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Download Image
+                </button>
+            </div>
+            
+            <!-- Settings Modal -->
+            <div class="settings-modal" id="settingsModal">
+                <div class="settings-modal-content">
+                    <div class="settings-modal-title">Settings</div>
+                    
+                    <div class="settings-section">
+                        <div class="settings-section-title">Budget</div>
+                        <div class="budget-input-group">
+                            <label class="budget-input-label" for="budgetInput">Monthly Budget Amount</label>
+                            <input type="text" class="budget-input" id="budgetInput" value="$2500">
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <div class="settings-section-title">Language</div>
+                        <div class="language-options">
+                            <div class="language-option active" onclick="setLanguage('en')">English</div>
+                            <div class="language-option" onclick="setLanguage('zh-TW')">繁體中文</div>
+                            <div class="language-option" onclick="setLanguage('id')">Bahasa Indonesia</div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-modal-buttons">
+                        <div class="settings-modal-button settings-cancel" onclick="closeSettingsModal()">Cancel</div>
+                        <div class="settings-modal-button settings-save" onclick="saveSettings()">Save</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="add-log-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Add Log
+        </button>
+    </div>
+    
+    <script>
+        // Fixed tab navigation logic
+        function showMainView(viewId) {
+            // Hide all main views
+            document.getElementById('budget-view').classList.remove('active');
+            document.getElementById('diary-daily-view').classList.remove('active');
+            document.getElementById('diary-monthly-view').classList.remove('active');
+            
+            // Show selected view
+            document.getElementById(viewId).classList.add('active');
+            
+            // Update main tabs
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Set the correct tab as active based on the view
+            if (viewId === 'budget-view') {
+                // Budget tab (second tab)
+                tabs[1].classList.add('active');
+            } else if (viewId.startsWith('diary-')) {
+                // Journal tab (first tab)
+                tabs[0].classList.add('active');
+                
+                // Update diary toggle buttons
+                const toggleButtons = document.querySelectorAll('.view-toggle-button');
+                if (viewId === 'diary-daily-view') {
+                    toggleButtons[0].classList.add('active');
+                    toggleButtons[1].classList.remove('active');
+                } else if (viewId === 'diary-monthly-view') {
+                    toggleButtons[0].classList.remove('active');
+                    toggleButtons[1].classList.add('active');
+                }
+            }
+        }
+        
+        // Switch between daily and monthly views
+        function showDiaryView(type) {
+            if (type === 'daily') {
+                showMainView('diary-daily-view');
+            } else if (type === 'monthly') {
+                showMainView('diary-monthly-view');
+            }
+        }
+        
+        // Image modal functions
+        function showImageModal(imgElement) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.classList.add('active');
+            modalImg.src = imgElement.src;
+            modalImg.alt = imgElement.alt;
+        }
+        
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+        }
+        
+        // Settings functions
+        function showSettingsModal() {
+            try {
+                const modal = document.getElementById('settingsModal');
+                if (modal) {
+                    modal.classList.add('active');
+                } else {
+                    console.error('Settings modal element not found');
+                }
+            } catch (error) {
+                console.error('Error showing settings modal:', error);
+            }
+        }
+        
+        function closeSettingsModal() {
+            try {
+                const modal = document.getElementById('settingsModal');
+                if (modal) {
+                    modal.classList.remove('active');
+                } else {
+                    console.error('Settings modal element not found');
+                }
+            } catch (error) {
+                console.error('Error closing settings modal:', error);
+            }
+        }
+        
+        function saveSettings() {
+            try {
+                // Save budget setting
+                const budgetInput = document.getElementById('budgetInput');
+                if (budgetInput) {
+                    const budgetValue = budgetInput.value;
+                    
+                    // Update the budget limit text
+                    const budgetLimitElement = document.querySelector('.budget-limit');
+                    if (budgetLimitElement) {
+                        budgetLimitElement.innerHTML = 'out of ' + budgetValue + ' budget <a href="#" onclick="showSettingsModal(); return false;">change</a>';
+                    } else {
+                        console.error('Budget limit element not found');
+                    }
+                } else {
+                    console.error('Budget input element not found');
+                }
+                
+                // Close the modal
+                closeSettingsModal();
+            } catch (error) {
+                console.error('Error saving settings:', error);
+            }
+        }
+        
+        function setLanguage(langCode) {
+            try {
+                // Remove active class from all language options
+                const langOptions = document.querySelectorAll('.language-option');
+                langOptions.forEach(option => {
+                    option.classList.remove('active');
+                });
+                
+                // Add active class to selected language
+                const selectedLang = document.querySelector(`.language-option[onclick="setLanguage('${langCode}')"]`);
+                if (selectedLang) {
+                    selectedLang.classList.add('active');
+                }
+                
+                // In a real app, we would update the UI text based on selected language
+                console.log('Language set to:', langCode);
+            } catch (error) {
+                console.error('Error setting language:', error);
+            }
+        }
+        
+        // Add event listeners when the document loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close modals when clicking outside
+            const imageModal = document.getElementById('imageModal');
+            if (imageModal) {
+                imageModal.addEventListener('click', function(event) {
+                    if (event.target === this) {
+                        closeImageModal();
+                    }
+                });
+            }
+            
+            const settingsModal = document.getElementById('settingsModal');
+            if (settingsModal) {
+                settingsModal.addEventListener('click', function(event) {
+                    if (event.target === this) {
+                        closeSettingsModal();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
