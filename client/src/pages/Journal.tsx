@@ -52,6 +52,13 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
   
+  // Sort expenses within each group by time (newest first)
+  dailyGroups.forEach(group => {
+    group.expenses.sort((a, b) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  });
+  
   // Pinch gesture effect for mobile devices
   useEffect(() => {
     if (!isMobile || !journalRef.current) return;
@@ -182,6 +189,13 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   // For each month, sort day groups (newest first)
   monthlyGroups.forEach(monthGroup => {
     monthGroup.dayGroups.sort((a, b) => b.day - a.day);
+    
+    // Sort expenses within each day group (newest first)
+    monthGroup.dayGroups.forEach(dayGroup => {
+      dayGroup.expenses.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+    });
   });
   
   if (isLoading) {

@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const schema = z.object({
         amount: z.string().transform(val => parseFloat(val)),
-        title: z.string().default("groceries")
+        title: z.string().optional().default("")
       });
       
       const result = schema.safeParse(req.body);
