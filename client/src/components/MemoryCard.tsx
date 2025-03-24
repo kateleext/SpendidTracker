@@ -1,15 +1,14 @@
-import { useAppContext } from '../context/AppContext';
 import { Expense } from '../types';
 
 interface MemoryCardProps {
   expense: Expense;
+  onImageClick: (imageUrl: string) => void;
 }
 
-const MemoryCard = ({ expense }: MemoryCardProps) => {
-  const { openImageModal } = useAppContext();
-
+const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
   const handleImageClick = () => {
-    openImageModal(expense.image_url);
+    console.log('MemoryCard: Opening image', expense.image_url);
+    onImageClick(expense.image_url);
   };
 
   // Format amount as currency

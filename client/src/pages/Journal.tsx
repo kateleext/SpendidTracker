@@ -1,16 +1,19 @@
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { format, isToday, parseISO, startOfMonth, endOfMonth } from "date-fns";
+import { format, isToday, parseISO } from "date-fns";
 import ViewToggle from "../components/ViewToggle";
 import MemoryCard from "../components/MemoryCard";
 import MonthCard from "../components/MonthCard";
-import { useAppContext } from "../context/AppContext";
-import { Expense, DailyExpenseGroup, MonthlyExpenseGroup } from "../types";
+import { Expense, DailyExpenseGroup, MonthlyExpenseGroup, ViewType } from "../types";
 
-const Journal = () => {
+interface JournalProps {
+  view: ViewType;
+  onViewChange: (view: ViewType) => void;
+  onImageClick: (imageUrl: string) => void;
+}
+
+const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   const { t } = useTranslation();
-  const { view } = useAppContext();
   
   // Fetch expenses
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
@@ -92,7 +95,7 @@ const Journal = () => {
     <div id="diary-view" className="view-content">
       <div className="diary-header flex items-center justify-between px-5 py-2.5 z-5">
         <div className="flex-grow"></div>
-        <ViewToggle />
+        <ViewToggle activeView={view} onViewChange={onViewChange} />
       </div>
 
       {view === 'daily' ? (
@@ -117,7 +120,11 @@ const Journal = () => {
                 </div>
 
                 {group.expenses.map(expense => (
-                  <MemoryCard key={expense.id} expense={expense} />
+                  <MemoryCard 
+                    key={expense.id} 
+                    expense={expense} 
+                    onImageClick={onImageClick}
+                  />
                 ))}
               </div>
             ))
@@ -132,7 +139,11 @@ const Journal = () => {
             </div>
           ) : (
             monthlyGroups.map(group => (
-              <MonthCard key={`${group.year}-${group.month}`} monthGroup={group} />
+              <MonthCard 
+                key={`${group.year}-${group.month}`} 
+                monthGroup={group} 
+                onImageClick={onImageClick}
+              />
             ))
           )}
         </div>

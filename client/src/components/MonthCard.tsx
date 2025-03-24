@@ -1,20 +1,20 @@
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { useAppContext } from '../context/AppContext';
 import { MonthlyExpenseGroup } from '../types';
 
 interface MonthCardProps {
   monthGroup: MonthlyExpenseGroup;
+  onImageClick: (imageUrl: string) => void;
 }
 
-const MonthCard = ({ monthGroup }: MonthCardProps) => {
+const MonthCard = ({ monthGroup, onImageClick }: MonthCardProps) => {
   const { t } = useTranslation();
-  const { openImageModal } = useAppContext();
   
   const monthName = format(new Date(monthGroup.year, monthGroup.month - 1, 1), 'MMMM yyyy');
   
   const handleThumbnailClick = (imageUrl: string) => {
-    openImageModal(imageUrl);
+    console.log('MonthCard: Opening image', imageUrl);
+    onImageClick(imageUrl);
   };
 
   return (
