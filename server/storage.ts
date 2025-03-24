@@ -39,7 +39,7 @@ export class DatabaseStorage implements IStorage {
   async updateUserBudget(id: number, budget: number): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
-      .set({ monthly_budget: budget, updated_at: new Date() })
+      .set({ monthly_budget: budget.toString(), updated_at: new Date() })
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
@@ -50,9 +50,17 @@ export class DatabaseStorage implements IStorage {
     let query = db.select().from(expenses).where(eq(expenses.user_id, userId));
     
     if (dateRange) {
-      query = query.where(
-        between(expenses.expense_date, dateRange.startDate, dateRange.endDate)
-      );
+      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
+      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      
+      query = db.select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.user_id, userId),
+            between(expenses.expense_date, startDateStr, endDateStr)
+          )
+        );
     }
     
     return await query.orderBy(desc(expenses.expense_date));
@@ -89,6 +97,10 @@ export class DatabaseStorage implements IStorage {
     const startDate = new Date(currentYear, currentMonth - 1, 1);
     const endDate = new Date(currentYear, currentMonth, 0);
     
+    // Convert dates to strings for the database query
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
     // Get user's budget
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     const userBudget = user ? Number(user.monthly_budget) : 2500;
@@ -117,7 +129,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(expenses.user_id, userId),
-          between(expenses.expense_date, startDate, endDate)
+          between(expenses.expense_date, startDateStr, endDateStr)
         )
       );
     
@@ -147,6 +159,10 @@ export class DatabaseStorage implements IStorage {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0);
       
+      // Convert dates to strings for the database query
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
       // Get total expenses for this month
       const expenseResult = await db
         .select({ 
@@ -156,7 +172,7 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(expenses.user_id, userId),
-            between(expenses.expense_date, startDate, endDate)
+            between(expenses.expense_date, startDateStr, endDateStr)
           )
         );
       

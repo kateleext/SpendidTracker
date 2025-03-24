@@ -128,11 +128,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newExpense = await storage.createExpense({
         user_id: 1, // Default user
-        amount,
+        amount: amount.toString(),
         title,
         image_url: imageUrl,
         image_thumbnail_url: thumbnailUrl,
-        expense_date: new Date()
+        expense_date: new Date().toISOString().split('T')[0]
       });
       
       res.status(201).json(newExpense);
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user_id: 1, // Default user
         month,
         year,
-        budget_amount
+        budget_amount: budget_amount.toString()
       });
       
       res.json(budget);
