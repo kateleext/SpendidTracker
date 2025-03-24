@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format, isToday, parseISO } from "date-fns";
+import { useRef, useEffect } from "react";
 import ViewToggle from "../components/ViewToggle";
 import MemoryCard from "../components/MemoryCard";
 import MonthCard from "../components/MonthCard";
+import { useIsMobile } from "../hooks/use-mobile";
 import { Expense, DailyExpenseGroup, MonthlyExpenseGroup, ViewType } from "../types";
 
 interface JournalProps {
@@ -14,6 +16,12 @@ interface JournalProps {
 
 const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  const journalRef = useRef<HTMLDivElement>(null);
+  
+  // Touch handling for pinch gesture
+  const touchStartRef = useRef<{ touches: Touch[], time: number } | null>(null);
+  const touchMoveRef = useRef<{ distance: number, direction: 'in' | 'out' | null } | null>(null);
   
   // Fetch expenses
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
@@ -43,6 +51,99 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   dailyGroups.sort((a, b) => {
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
+  
+  // Pinch gesture effect for mobile devices
+  useEffect(() => {
+    if (!isMobile || !journalRef.current) return;
+    
+    // Calculate distance between two touch points
+    const getDistance = (touches: Touch[]) => {
+      if (touches.length !== 2) return 0;
+      
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+    
+    // Handle touch start
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        // Store initial touch data
+        touchStartRef.current = {
+          touches: Array.from(e.touches),
+          time: Date.now()
+        };
+        
+        // Reset move data
+        touchMoveRef.current = {
+          distance: getDistance(Array.from(e.touches)),
+          direction: null
+        };
+      }
+    };
+    
+    // Handle touch move
+    const handleTouchMove = (e: TouchEvent) => {
+      // Skip if we don't have start data or there aren't 2 fingers
+      if (!touchStartRef.current || e.touches.length !== 2) return;
+      
+      // Get current distance between fingers
+      const currentDistance = getDistance(Array.from(e.touches));
+      
+      // Only continue if we have initial distance stored
+      if (touchMoveRef.current && touchMoveRef.current.distance > 0) {
+        const initialDistance = touchMoveRef.current.distance;
+        const distanceDiff = currentDistance - initialDistance;
+        
+        // Determine pinch direction
+        const direction = distanceDiff > 50 ? 'out' : (distanceDiff < -50 ? 'in' : null);
+        
+        // Only update if direction changed
+        if (direction !== null && touchMoveRef.current.direction !== direction) {
+          touchMoveRef.current.direction = direction;
+        }
+      }
+    };
+    
+    // Handle touch end
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current || !touchMoveRef.current) return;
+      
+      // Abort if touch duration was too short
+      const touchDuration = Date.now() - touchStartRef.current.time;
+      if (touchDuration < 100) {
+        touchStartRef.current = null;
+        touchMoveRef.current = null;
+        return;
+      }
+      
+      // Toggle view based on pinch direction, but only for vertical pinches
+      if (touchMoveRef.current.direction === 'in') {
+        // Pinch in - show monthly view
+        view === 'daily' && onViewChange('monthly');
+      } else if (touchMoveRef.current.direction === 'out') {
+        // Pinch out - show daily view
+        view === 'monthly' && onViewChange('daily');
+      }
+      
+      // Reset touch data
+      touchStartRef.current = null;
+      touchMoveRef.current = null;
+    };
+    
+    // Add event listeners
+    const element = journalRef.current;
+    element.addEventListener('touchstart', handleTouchStart);
+    element.addEventListener('touchmove', handleTouchMove);
+    element.addEventListener('touchend', handleTouchEnd);
+    
+    // Cleanup
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, view, onViewChange]);
   
   // Group expenses by month for monthly view
   const monthlyGroups = expenses.reduce<MonthlyExpenseGroup[]>((groups, expense) => {
@@ -92,7 +193,7 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   }
 
   return (
-    <div id="diary-view" className="view-content">
+    <div id="diary-view" className="view-content" ref={journalRef}>
       <div className="diary-header flex items-center justify-between px-5 py-2.5 z-5">
         <ViewToggle activeView={view} onViewChange={onViewChange} />
         <div className="flex-grow"></div>
