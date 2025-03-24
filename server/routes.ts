@@ -99,9 +99,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/expenses", upload.single("image"), async (req: Request, res: Response) => {
     try {
+      console.log("POST /api/expenses - Processing expense creation");
+      
       if (!req.file) {
+        console.log("POST /api/expenses - No image file found in request");
         return res.status(400).json({ message: "Image is required" });
       }
+      
+      console.log(`POST /api/expenses - Received file: ${req.file.originalname}, Size: ${req.file.size} bytes`);
       
       // Validate request body
       const schema = z.object({
@@ -111,16 +116,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = schema.safeParse(req.body);
       if (!result.success) {
+        console.log(`POST /api/expenses - Invalid data: ${JSON.stringify(req.body)}`);
         return res.status(400).json({ message: "Invalid expense data" });
       }
       
       const { amount, title } = result.data;
+      console.log(`POST /api/expenses - Processing expense: Amount: ${amount}, Title: ${title}`);
       
       // Generate thumbnail
       const thumbnailPath = req.file.path.replace(/\.\w+$/, "_thumb$&");
       await sharp(req.file.path)
         .resize(150, 150, { fit: "cover" })
         .toFile(thumbnailPath);
+      
+      console.log(`POST /api/expenses - Thumbnail created at: ${thumbnailPath}`);
       
       // Create expense
       const imageUrl = `/uploads/${path.basename(req.file.path)}`;
@@ -135,8 +144,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expense_date: new Date().toISOString().split('T')[0]
       });
       
+      console.log(`POST /api/expenses - Expense created with ID: ${newExpense.id}`);
       res.status(201).json(newExpense);
     } catch (error) {
+      console.error("POST /api/expenses - Error:", error);
       res.status(500).json({ message: "Error creating expense" });
     }
   });

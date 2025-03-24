@@ -37,11 +37,13 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout | null = null;
     
-    // Only initialize camera when modal is open and we're in camera view and not already initialized
-    if (isOpen && showCameraView && !cameraInitialized) {
+    if (isOpen && showCameraView) {
       console.log('AddExpenseModal: Starting camera initialization sequence');
       
-      // Init camera with delay to avoid rapid initialization
+      // First, ensure any previous camera is stopped
+      stopCamera();
+      
+      // Wait a moment to avoid rapid initialization/reinitialization
       initTimeout = setTimeout(async () => {
         if (!mounted) return;
         
@@ -62,7 +64,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         } catch (err) {
           console.error('Camera initialization error:', err);
         }
-      }, 500);
+      }, 800); // Slightly longer delay to ensure cleanup is complete
     }
     
     // Cleanup function to handle unmounting or component unload
@@ -73,14 +75,14 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         clearTimeout(initTimeout);
       }
       
-      // Only fully stop camera when the modal closes
-      if (!isOpen) {
-        console.log('AddExpenseModal: Modal closed, stopping camera');
+      // Stop camera when component unmounts or when switching away from camera view
+      if (!isOpen || !showCameraView) {
+        console.log('AddExpenseModal: Stopping camera because modal closed or view changed');
         stopCamera();
         setCameraInitialized(false);
       }
     };
-  }, [isOpen, showCameraView, cameraInitialized, startCamera, stopCamera]);
+  }, [isOpen, showCameraView, startCamera, stopCamera]);
   
   // Handle capture button click
   const handleCapture = () => {
