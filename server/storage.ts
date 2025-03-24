@@ -190,13 +190,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setMonthlyBudget(budget: InsertMonthlyBudget): Promise<MonthlyBudget> {
+    // Ensure user_id is defined and properly converted to number
+    const userId = typeof budget.user_id === 'number' 
+      ? budget.user_id 
+      : budget.user_id !== undefined 
+        ? parseInt(budget.user_id.toString()) 
+        : 0;
+    
     // Check if a budget already exists for this month/year
     const [existingBudget] = await db
       .select()
       .from(monthlyBudgets)
       .where(
         and(
-          eq(monthlyBudgets.user_id, parseInt(budget.user_id.toString())),
+          eq(monthlyBudgets.user_id, userId),
           eq(monthlyBudgets.month, budget.month),
           eq(monthlyBudgets.year, budget.year)
         )
