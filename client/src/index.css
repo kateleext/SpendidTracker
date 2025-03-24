@@ -11,3 +11,21 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@layer components {
+  .text-accent {
+    color: #22c55e;
+  }
+  
+  .border-accent {
+    border-color: #22c55e;
+  }
+  
+  .bg-accent {
+    background-color: #22c55e;
+  }
+  
+  .bg-accent-light {
+    background-color: #4ade80;
+  }
+}

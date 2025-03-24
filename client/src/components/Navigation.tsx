@@ -27,7 +27,7 @@ const Navigation = () => {
           }`}
           onClick={() => handleTabChange('budget')}
         >
-          {t('budget')}
+          Budget
         </div>
       </div>
     </nav>
