@@ -27,7 +27,7 @@
   "pleaseEnterAmount": "請輸入有效金額",
   "availableThisMonth": "本月剩餘",
   "spentOf": "已支出，總預算",
-  "budget": "預算",
+  "budgetLower": "預算",
   "adjust": "調整",
   "spendingHistory": "支出歷史",
   "noSpendingHistory": "尚無支出歷史記錄"

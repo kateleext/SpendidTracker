@@ -8,24 +8,24 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-white text-foreground;
   }
 }
 
 @layer components {
   .text-accent {
-    color: #22c55e;
+    color: #4a5d44;
   }
   
   .border-accent {
-    border-color: #22c55e;
+    border-color: #4a5d44;
   }
   
   .bg-accent {
-    background-color: #22c55e;
+    background-color: #4a5d44;
   }
   
   .bg-accent-light {
-    background-color: #4ade80;
+    background-color: #5d7052;
   }
 }

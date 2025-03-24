@@ -27,7 +27,7 @@
   "pleaseEnterAmount": "Silakan masukkan jumlah yang valid",
   "availableThisMonth": "tersedia bulan ini",
   "spentOf": "dihabiskan dari",
-  "budget": "anggaran",
+  "budgetLower": "anggaran",
   "adjust": "Sesuaikan",
   "spendingHistory": "Riwayat Pengeluaran",
   "noSpendingHistory": "Belum ada riwayat pengeluaran"
