@@ -1,20 +1,17 @@
 import { Camera } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 
-const AddButton = () => {
-  const { t } = useTranslation();
-  const { openAddExpenseModal } = useAppContext();
+interface AddButtonProps {
+  onAddClick: () => void;
+}
 
-  const handleClick = () => {
-    console.log('Add button clicked, opening expense modal');
-    openAddExpenseModal();
-  };
+const AddButton = ({ onAddClick }: AddButtonProps) => {
+  const { t } = useTranslation();
 
   return (
     <button
       className="add-log-button fixed bottom-8 left-1/2 transform -translate-x-1/2 w-auto h-12 bg-gradient-to-r from-accent to-accent-light rounded-full shadow-lg flex items-center justify-center cursor-pointer z-20 px-6 border-0 hover:shadow-xl active:scale-95 transition-all"
-      onClick={handleClick}
+      onClick={onAddClick}
       type="button"
       aria-label={t('addExpense')}
     >

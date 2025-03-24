@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAppContext } from '../context/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import { User, Language } from '../types';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
-const SettingsModal = () => {
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const { t } = useTranslation();
   const { changeLanguage, getCurrentLanguage } = useI18n();
-  const { isSettingsModalOpen, closeSettingsModal } = useAppContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -34,11 +37,13 @@ const SettingsModal = () => {
   // Set up budget update mutation
   const updateBudgetMutation = useMutation({
     mutationFn: async (newBudget: number) => {
+      console.log('Updating budget to', newBudget);
       const res = await apiRequest('PUT', '/api/user/budget', { budget: newBudget });
       return res.json();
     },
     onSuccess: () => {
       // Invalidate budget queries to refresh data
+      console.log('Budget updated successfully');
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
       queryClient.invalidateQueries({ queryKey: ['/api/budget/current'] });
       
@@ -47,9 +52,10 @@ const SettingsModal = () => {
         description: t('budgetUpdated'),
       });
       
-      closeSettingsModal();
+      onClose();
     },
     onError: (error) => {
+      console.error('Budget update failed:', error);
       toast({
         title: t('error'),
         description: error.message || t('budgetUpdateFailed'),
@@ -60,11 +66,13 @@ const SettingsModal = () => {
   
   // Handle language change
   const handleLanguageSelect = (lang: Language) => {
+    console.log('Language selected:', lang);
     setSelectedLanguage(lang);
   };
   
   // Handle save button click
   const handleSave = () => {
+    console.log('Save settings clicked');
     // Update language if changed
     if (selectedLanguage !== getCurrentLanguage()) {
       changeLanguage(selectedLanguage);
@@ -74,11 +82,11 @@ const SettingsModal = () => {
     if (user && budgetValue !== parseFloat(user.monthly_budget)) {
       updateBudgetMutation.mutate(budgetValue);
     } else {
-      closeSettingsModal();
+      onClose();
     }
   };
   
-  if (!isSettingsModalOpen) {
+  if (!isOpen) {
     return null;
   }
 
@@ -166,7 +174,8 @@ const SettingsModal = () => {
         <div className="settings-actions flex justify-end gap-3">
           <button
             className="settings-cancel px-5 py-2 border border-gray-300 rounded-lg text-[14px] font-medium bg-white text-text-primary"
-            onClick={closeSettingsModal}
+            onClick={onClose}
+            type="button"
           >
             {t('cancel')}
           </button>
@@ -174,6 +183,7 @@ const SettingsModal = () => {
             className="settings-save px-5 py-2 border-0 rounded-lg text-[14px] font-medium bg-accent text-white"
             onClick={handleSave}
             disabled={updateBudgetMutation.isPending}
+            type="button"
           >
             {updateBudgetMutation.isPending ? t('saving') : t('save')}
           </button>
