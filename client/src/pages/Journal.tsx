@@ -223,7 +223,7 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
           ) : (
             dailyGroups.map(group => (
               <div className="day-group" key={group.date}>
-                <div className="day-header pt-4 pb-2.5 px-5 text-[22px] font-semibold bg-primary-bg sticky top-[85px] z-5 flex items-center">
+                <div className="day-header pt-4 pb-2.5 px-5 text-[22px] font-semibold bg-gray-50 sticky top-[50px] z-10 flex items-center">
                   <div className="day-header-date">
                     {format(parseISO(group.date), 'MMMM d')}
                   </div>

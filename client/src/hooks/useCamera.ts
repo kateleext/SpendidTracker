@@ -24,10 +24,18 @@ export const useCamera = () => {
   }, [stream]);
 
   const startCamera = useCallback(async () => {
+    console.log('useCamera: startCamera called');
+
     // Prevent multiple simultaneous initialization attempts
     if (isCameraInitializing.current) {
       console.log('useCamera: Camera initialization already in progress, skipping');
       return false;
+    }
+
+    // If video is already playing, return success
+    if (isVideoPlaying && stream && videoRef.current && videoRef.current.srcObject) {
+      console.log('useCamera: Camera already initialized and playing, skipping');
+      return true;
     }
 
     isCameraInitializing.current = true;
@@ -46,20 +54,44 @@ export const useCamera = () => {
         return false;
       }
 
-      // Clean up any existing streams first to ensure we don't have conflicts
+      // This is critical - make sure we're in a clean state before starting
+      // Call stopCamera to ensure all resources are properly released
+      console.log('useCamera: Ensuring clean state before starting camera');
+
+      // Clean up any existing streams
       if (stream) {
-        console.log('useCamera: Stopping existing stream before initializing new one');
+        console.log('useCamera: Cleaning up existing stream');
         stream.getTracks().forEach(track => {
           console.log(`useCamera: Stopping track: ${track.kind} (enabled: ${track.enabled}, readyState: ${track.readyState})`);
-          track.stop();
+          try {
+            track.stop();
+          } catch (err) {
+            console.error(`useCamera: Error stopping track ${track.kind}:`, err);
+          }
         });
         setStream(null);
       }
 
+      // Clean up video element
       if (videoRef.current) {
-        console.log('useCamera: Clearing video element srcObject');
-        videoRef.current.srcObject = null;
+        console.log('useCamera: Cleaning up video element');
+        try {
+          videoRef.current.pause();
+        } catch (err) {
+          console.error('useCamera: Error pausing video:', err);
+        }
+
+        try {
+          videoRef.current.srcObject = null;
+        } catch (err) {
+          console.error('useCamera: Error clearing video srcObject:', err);
+        }
+
+        videoRef.current.onloadedmetadata = null;
       }
+
+      // Reset state
+      setIsVideoPlaying(false);
 
       console.log('useCamera: Requesting camera access...');
       // Check if we're on a mobile device and use appropriate constraints
@@ -191,26 +223,65 @@ export const useCamera = () => {
     // Reset initialization flag to ensure we can start again
     isCameraInitializing.current = false;
 
-    if (stream) {
-      console.log('useCamera: Stopping camera stream');
-      stream.getTracks().forEach(track => {
-        console.log(`useCamera: Stopping track: ${track.kind}`);
-        track.stop();
-      });
-      setStream(null);
-    }
+    console.log('useCamera: Stopping camera stream');
 
-    if (videoRef.current) {
-      console.log('useCamera: Clearing video element srcObject');
-      // Pause video first to prevent any video processing
-      videoRef.current.pause();
-      // Remove the source
-      videoRef.current.srcObject = null;
-      // Remove any event listeners that might have been set
-      videoRef.current.onloadedmetadata = null;
-    }
-
+    // Set video playing state to false immediately
     setIsVideoPlaying(false);
+
+    if (stream) {
+      try {
+        // Log track details before stopping
+        stream.getTracks().forEach(track => {
+          console.log(`useCamera: Stopping track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+
+          // Force stop the track
+          try {
+            track.stop();
+          } catch (err) {
+            console.error(`useCamera: Error stopping ${track.kind} track:`, err);
+          }
+        });
+      } catch (err) {
+        console.error('useCamera: Error stopping stream tracks:', err);
+      }
+
+      // Clear the stream reference
+      setStream(null);
+    } else {
+      console.log('useCamera: No stream to stop');
+    }
+
+    // Clean up video element
+    if (videoRef.current) {
+      try {
+        console.log('useCamera: Cleaning up video element');
+
+        // Pause video first
+        try {
+          videoRef.current.pause();
+        } catch (err) {
+          console.error('useCamera: Error pausing video:', err);
+        }
+
+        // Remove the source object
+        try {
+          videoRef.current.srcObject = null;
+        } catch (err) {
+          console.error('useCamera: Error clearing video srcObject:', err);
+        }
+
+        // Remove any event listeners
+        videoRef.current.onloadedmetadata = null;
+        videoRef.current.onloadeddata = null;
+        videoRef.current.onplay = null;
+
+        console.log('useCamera: Video element cleaned up');
+      } catch (err) {
+        console.error('useCamera: Error cleaning up video element:', err);
+      }
+    } else {
+      console.log('useCamera: No video element to clean up');
+    }
   }, [stream]);
 
   const capturePhoto = useCallback(() => {

@@ -10,7 +10,7 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const { t } = useTranslation();
 
   return (
-    <nav className="nav-container sticky top-0 z-50 bg-white pt-3 pb-2">
+    <nav className="nav-container sticky top-0 z-50 bg-gray-50 pt-3 pb-2">
       <div className="nav-tabs flex mx-5 border-b border-gray-200">
         <button
           className={`nav-tab flex-1 text-center py-2.5 text-[15px] font-medium border-b-2 transition-all cursor-pointer ${

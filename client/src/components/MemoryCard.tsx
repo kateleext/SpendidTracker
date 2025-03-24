@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MoreVertical, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Expense } from '../types';
+import { format, formatDistance, isToday, parseISO } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,27 @@ interface MemoryCardProps {
   expense: Expense;
   onImageClick: (imageUrl: string) => void;
 }
+
+// Helper function to format time display
+const formatTimeDisplay = (dateTimeString: string): string => {
+  const date = parseISO(dateTimeString);
+  
+  if (isToday(date)) {
+    // For today's expenses, show "X hours ago" or the time
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24 && diffInHours > 0.5) {
+      return formatDistance(date, now, { addSuffix: true });
+    } else {
+      // Show military time for very recent expenses
+      return format(date, 'HH:mm');
+    }
+  } else {
+    // For older expenses, just show the time
+    return format(date, 'HH:mm');
+  }
+};
 
 const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
   const { t } = useTranslation();
@@ -43,6 +65,11 @@ const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
       
       if (!response.ok) {
         throw new Error('Failed to delete expense');
+      }
+      
+      // For 204 No Content responses, just return success without trying to parse JSON
+      if (response.status === 204) {
+        return { success: true };
       }
       
       return response.json();
@@ -106,8 +133,13 @@ const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
       </div>
       <div className="memory-details py-4 px-5">
         <div className="memory-title-row flex justify-between items-center">
-          <div className="memory-title text-[16px] font-semibold text-text-primary">
-            {expense.title}
+          <div className="flex flex-col">
+            <div className="memory-title text-[16px] font-semibold text-text-primary">
+              {expense.title}
+            </div>
+            <div className="memory-time text-[12px] text-gray-500 mt-1">
+              {formatTimeDisplay(expense.created_at)}
+            </div>
           </div>
           <div className="memory-amount text-[16px] font-bold text-accent">
             {formattedAmount}
