@@ -128,17 +128,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { amount, title } = result.data;
       console.log(`POST /api/expenses - Processing expense: Amount: ${amount}, Title: ${title}`);
       
-      // Generate thumbnail
+      // Check file size before processing
+      if (req.file.size === 0) {
+        console.log("POST /api/expenses - Warning: File size is 0 bytes, may be corrupt");
+      }
+
+      // Define thumbnail path outside try block so it's accessible later
       const thumbnailPath = req.file.path.replace(/\.\w+$/, "_thumb$&");
-      await sharp(req.file.path)
-        .resize(150, 150, { fit: "cover" })
-        .toFile(thumbnailPath);
+      let thumbnailCreated = false;
       
-      console.log(`POST /api/expenses - Thumbnail created at: ${thumbnailPath}`);
+      try {
+        // Generate thumbnail with error handling
+        console.log(`POST /api/expenses - Processing image with sharp: ${req.file.path}`);
+        
+        await sharp(req.file.path, { failOnError: false })
+          .resize(150, 150, { fit: "cover" })
+          .jpeg({ quality: 90 })
+          .toFile(thumbnailPath);
+        
+        console.log(`POST /api/expenses - Thumbnail created at: ${thumbnailPath}`);
+        thumbnailCreated = true;
+      } catch (err: any) {
+        console.error(`POST /api/expenses - Error generating thumbnail: ${err?.message || 'Unknown error'}`);
+        // Continue anyway, we'll just use the original file without a thumbnail
+      }
       
       // Create expense
       const imageUrl = `/uploads/${path.basename(req.file.path)}`;
-      const thumbnailUrl = `/uploads/${path.basename(thumbnailPath)}`;
+      const thumbnailUrl = thumbnailCreated 
+        ? `/uploads/${path.basename(thumbnailPath)}`
+        : imageUrl; // Use original image URL if thumbnail creation failed
       
       const newExpense = await storage.createExpense({
         user_id: 1, // Default user

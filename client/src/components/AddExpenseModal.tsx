@@ -32,18 +32,16 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     }
   }, [isOpen, resetCapture]);
   
-  // Initialize camera only once when the component first mounts
+  // Initialize camera only once when showing camera view
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout | null = null;
     
-    if (isOpen && showCameraView) {
+    // Only initialize camera when modal is open, we're in camera view, and camera is not already initialized
+    if (isOpen && showCameraView && !cameraInitialized) {
       console.log('AddExpenseModal: Starting camera initialization sequence');
       
-      // First, ensure any previous camera is stopped
-      stopCamera();
-      
-      // Wait a moment to avoid rapid initialization/reinitialization
+      // Wait a moment to avoid rapid initialization
       initTimeout = setTimeout(async () => {
         if (!mounted) return;
         
@@ -64,7 +62,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         } catch (err) {
           console.error('Camera initialization error:', err);
         }
-      }, 800); // Slightly longer delay to ensure cleanup is complete
+      }, 500);
     }
     
     // Cleanup function to handle unmounting or component unload
@@ -75,14 +73,14 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         clearTimeout(initTimeout);
       }
       
-      // Stop camera when component unmounts or when switching away from camera view
-      if (!isOpen || !showCameraView) {
-        console.log('AddExpenseModal: Stopping camera because modal closed or view changed');
+      // Stop camera only when modal closes completely
+      if (!isOpen) {
+        console.log('AddExpenseModal: Modal closed, stopping camera');
         stopCamera();
         setCameraInitialized(false);
       }
     };
-  }, [isOpen, showCameraView, startCamera, stopCamera]);
+  }, [isOpen, showCameraView, cameraInitialized, startCamera, stopCamera]);
   
   // Handle capture button click
   const handleCapture = () => {
@@ -155,42 +153,77 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       console.log('AddExpenseModal: Processing captured image');
       
       // Convert data URL to Blob with proper type
-      // Properly extract the base64 data from the data URL
       const dataURLParts = capturedImage.split(',');
-      const mime = dataURLParts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-      const base64Data = dataURLParts[1];
-      const byteCharacters = atob(base64Data);
-      
-      // Convert base64 to binary
-      const byteArrays = [];
-      for (let i = 0; i < byteCharacters.length; i += 512) {
-        const slice = byteCharacters.slice(i, i + 512);
-        const byteNumbers = new Array(slice.length);
-        for (let j = 0; j < slice.length; j++) {
-          byteNumbers[j] = slice.charCodeAt(j);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        byteArrays.push(byteArray);
+      if (dataURLParts.length !== 2) {
+        throw new Error('Invalid image data format');
       }
       
-      // Create blob with proper MIME type
-      const blob = new Blob(byteArrays, { type: mime });
-      console.log(`AddExpenseModal: Created blob of type ${mime}, size: ${blob.size} bytes`);
+      const mimeMatch = dataURLParts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      console.log(`AddExpenseModal: Image MIME type: ${mime}`);
+      
+      // Handle base64 data
+      let base64Data;
+      try {
+        base64Data = dataURLParts[1];
+        console.log(`AddExpenseModal: Base64 data length: ${base64Data.length}`);
+      } catch (err) {
+        console.error('Error extracting base64 data:', err);
+        throw new Error('Failed to process image data');
+      }
+      
+      // Ensure we have valid base64 data
+      if (!base64Data || base64Data.trim() === '') {
+        console.error('AddExpenseModal: Empty base64 data');
+        throw new Error('No image data available');
+      }
+      
+      // Convert base64 to binary with chunking for large images
+      let blob: Blob;
+      try {
+        const byteCharacters = atob(base64Data);
+        const byteArrays = [];
+        
+        // Process in chunks to avoid memory issues
+        const chunkSize = 1024; // Process 1kb at a time
+        for (let i = 0; i < byteCharacters.length; i += chunkSize) {
+          const chunk = byteCharacters.slice(i, i + chunkSize);
+          const byteNumbers = new Array(chunk.length);
+          
+          for (let j = 0; j < chunk.length; j++) {
+            byteNumbers[j] = chunk.charCodeAt(j);
+          }
+          
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+        
+        // Create blob with proper MIME type
+        blob = new Blob(byteArrays, { type: mime });
+        console.log(`AddExpenseModal: Created blob of type ${mime}, size: ${blob.size} bytes`);
+        
+        if (blob.size === 0) {
+          throw new Error('Created blob has zero size');
+        }
+      } catch (err) {
+        console.error('Error creating blob:', err);
+        throw new Error('Failed to process image');
+      }
       
       // Create form data
       const formData = new FormData();
-      formData.append('image', blob, 'expense.jpg');
+      formData.append('image', blob, `expense_${Date.now()}.jpg`);
       formData.append('amount', amount);
       formData.append('title', title || 'groceries');
       
       console.log('AddExpenseModal: Submitting form data');
       // Submit the form
       createExpenseMutation.mutate(formData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing image:', error);
       toast({
         title: t('error'),
-        description: t('errorProcessingImage'),
+        description: error.message || t('errorProcessingImage'),
         variant: 'destructive',
       });
     }

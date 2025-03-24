@@ -49,16 +49,17 @@ export const useCamera = () => {
       }
       
       console.log('useCamera: Requesting camera access with environment facing mode...');
-      // Try to get camera access with environment (back) camera preference
+      // Check if we're on a mobile device and use simpler constraints
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Simpler camera settings based on device type
       const constraints = {
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+        video: isMobile 
+          ? { facingMode: 'environment' } // Simple constraints for mobile
+          : { facingMode: 'user' } // For desktop, just use the front camera
       };
       
-      console.log(`useCamera: Using constraints: ${JSON.stringify(constraints)}`);
+      console.log(`useCamera: Using constraints for ${isMobile ? 'mobile' : 'desktop'}: ${JSON.stringify(constraints)}`);
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log(`useCamera: Got media stream with ${mediaStream.getVideoTracks().length} video tracks`);
@@ -138,23 +139,46 @@ export const useCamera = () => {
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current) return null;
+    if (!videoRef.current) {
+      console.error('useCamera: Cannot capture photo - video element not available');
+      return null;
+    }
     
-    const canvas = document.createElement('canvas');
-    const video = videoRef.current;
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-    
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const dataUrl = canvas.toDataURL('image/jpeg');
-    setCapturedImage(dataUrl);
-    
-    return dataUrl;
+    try {
+      const canvas = document.createElement('canvas');
+      const video = videoRef.current;
+      
+      // Ensure we have valid dimensions
+      if (!video.videoWidth || !video.videoHeight) {
+        console.error('useCamera: Video dimensions not available');
+        return null;
+      }
+      
+      console.log(`useCamera: Video dimensions ${video.videoWidth}x${video.videoHeight}`);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error('useCamera: Could not get canvas context');
+        return null;
+      }
+      
+      // Draw the current video frame to the canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Create a high-quality JPEG data URL
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      console.log(`useCamera: Photo captured, data URL length: ${dataUrl.length}`);
+      
+      // Store the captured image
+      setCapturedImage(dataUrl);
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('useCamera: Error capturing photo:', error);
+      return null;
+    }
   }, []);
 
   const resetCapture = useCallback(() => {
