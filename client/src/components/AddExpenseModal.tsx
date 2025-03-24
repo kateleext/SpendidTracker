@@ -16,7 +16,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const queryClient = useQueryClient();
   
   const [amount, setAmount] = useState<string>('');
-  const [title, setTitle] = useState<string>('groceries');
+  const [title, setTitle] = useState<string>('');
   const [showCameraView, setShowCameraView] = useState<boolean>(true);
   const [cameraInitialized, setCameraInitialized] = useState<boolean>(false);
   
@@ -26,7 +26,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       console.log('AddExpenseModal: Modal opened, resetting form values');
       resetCapture();
       setAmount('');
-      setTitle('groceries');
+      setTitle(''); // Empty title, will use placeholder instead
       setShowCameraView(true);
       setCameraInitialized(false); // Start with camera disabled until explicitly started
     }
@@ -199,20 +199,20 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   return (
     <div id="addExpenseModal" className="fixed inset-0 bg-black/90 z-50 flex flex-col">
       <div className="w-full h-full relative overflow-hidden">
-        {/* Header with close button */}
-        <div className="sticky top-0 z-10 px-4 py-3 flex justify-between items-center bg-black/30 backdrop-blur-sm">
+        {/* Header with buttons - always visible and above all other content */}
+        <div className="fixed top-0 left-0 right-0 z-50 px-4 py-3 flex justify-between items-center bg-black/50 backdrop-blur-sm">
           <button 
-            className="text-white hover:text-gray-200 font-medium z-20"
+            className="text-white hover:text-gray-200 font-medium"
             onClick={handleCancel}
             type="button"
           >
             {showCameraView ? t('back') : t('cancel')}
           </button>
-          <h2 className="text-lg font-semibold text-white z-20">
+          <h2 className="text-lg font-semibold text-white">
             {showCameraView ? t('snapAnExpense') : (capturedImage ? t('reviewExpense') : t('addExpense'))}
           </h2>
           <button 
-            className="text-[#4a5d44] font-medium hover:text-opacity-80 z-20"
+            className="text-[#4a5d44] font-medium hover:text-opacity-80"
             onClick={handleSave}
             disabled={showCameraView || createExpenseMutation.isPending}
             type="button"
@@ -222,7 +222,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         </div>
         
         {/* Full-screen Camera/Image section */}
-        <div className="absolute inset-0 z-10">
+        <div className="absolute inset-0 pt-12 z-10">
           {capturedImage ? (
             <img 
               src={capturedImage} 
