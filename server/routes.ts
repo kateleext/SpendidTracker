@@ -18,19 +18,24 @@ const upload = multer({
     },
     filename: (req, file, cb) => {
       const uniquePrefix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, uniquePrefix + path.extname(file.originalname));
+      const extension = file.originalname.includes('.') ? path.extname(file.originalname) : '.jpg';
+      cb(null, uniquePrefix + extension);
     }
   }),
   fileFilter: (req, file, cb) => {
-    // Accept only images
-    if (file.mimetype.startsWith("image/")) {
+    console.log(`Processing file upload: ${file.originalname}, mimetype: ${file.mimetype}`);
+    
+    // Accept all image types
+    if (file.mimetype.startsWith("image/") || file.originalname.endsWith('.jpg') || file.originalname.endsWith('.jpeg') || file.originalname.endsWith('.png')) {
+      console.log(`File accepted: ${file.originalname}`);
       cb(null, true);
     } else {
+      console.log(`File rejected (not an image): ${file.originalname}, ${file.mimetype}`);
       cb(new Error("Only image files are allowed"));
     }
   },
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB limit
   }
 });
 

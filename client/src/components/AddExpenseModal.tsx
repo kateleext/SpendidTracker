@@ -152,9 +152,30 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     }
     
     try {
-      // Convert data URL to Blob
-      const fetchResponse = await fetch(capturedImage);
-      const blob = await fetchResponse.blob();
+      console.log('AddExpenseModal: Processing captured image');
+      
+      // Convert data URL to Blob with proper type
+      // Properly extract the base64 data from the data URL
+      const dataURLParts = capturedImage.split(',');
+      const mime = dataURLParts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+      const base64Data = dataURLParts[1];
+      const byteCharacters = atob(base64Data);
+      
+      // Convert base64 to binary
+      const byteArrays = [];
+      for (let i = 0; i < byteCharacters.length; i += 512) {
+        const slice = byteCharacters.slice(i, i + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let j = 0; j < slice.length; j++) {
+          byteNumbers[j] = slice.charCodeAt(j);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      
+      // Create blob with proper MIME type
+      const blob = new Blob(byteArrays, { type: mime });
+      console.log(`AddExpenseModal: Created blob of type ${mime}, size: ${blob.size} bytes`);
       
       // Create form data
       const formData = new FormData();
@@ -162,6 +183,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       formData.append('amount', amount);
       formData.append('title', title || 'groceries');
       
+      console.log('AddExpenseModal: Submitting form data');
       // Submit the form
       createExpenseMutation.mutate(formData);
     } catch (error) {
@@ -253,11 +275,6 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   >
                     <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
                   </button>
-                  <div className="absolute bottom-28 left-0 right-0 flex justify-center">
-                    <span className="text-white bg-black/40 px-4 py-2 rounded-full text-sm font-medium">
-                      {t('snapAnExpense')}
-                    </span>
-                  </div>
                 </>
               )}
             </div>
