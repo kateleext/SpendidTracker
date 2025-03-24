@@ -52,11 +52,20 @@ export const useCamera = () => {
       // Check if we're on a mobile device and use simpler constraints
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      // Simpler camera settings based on device type
+      // More advanced constraints based on device type
       const constraints = {
         video: isMobile 
-          ? { facingMode: 'environment' } // Simple constraints for mobile
-          : { facingMode: 'user' } // For desktop, just use the front camera
+          ? { 
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            } 
+          : { 
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
+        audio: false
       };
       
       console.log(`useCamera: Using constraints for ${isMobile ? 'mobile' : 'desktop'}: ${JSON.stringify(constraints)}`);

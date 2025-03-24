@@ -43,7 +43,7 @@ const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
       </div>
       
       <div className="budget-limit text-[14px] text-text-secondary mb-5">
-        {t('monthlyBudget')}: 
+        {t('monthlyBudget')}: {totalBudget}
         <a 
           href="#" 
           className="text-accent font-medium ml-1"

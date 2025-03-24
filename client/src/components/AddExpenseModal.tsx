@@ -291,6 +291,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   className="h-full w-full object-cover" 
                   playsInline 
                   autoPlay
+                  muted
                 />
               ) : (
                 <div className="text-white text-center">
