@@ -26,7 +26,7 @@ const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
   const years = Object.keys(groupedByYear).map(Number).sort((a, b) => b - a);
   
   return (
-    <div className="history-container mx-5">
+    <div className="history-container mx-5 bg-white rounded-xl shadow-lg p-4 mb-6">
       {years.map(year => {
         const yearItems = groupedByYear[year];
         

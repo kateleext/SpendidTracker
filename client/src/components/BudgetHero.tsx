@@ -23,7 +23,7 @@ const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
   const spentAmount = formatCurrency(budget.spent);
   
   return (
-    <div className="budget-hero px-5 py-8 text-center">
+    <div className="budget-hero px-5 py-8 text-center bg-white rounded-xl shadow-lg mx-5 mb-6">
       <div className="budget-value text-[72px] font-bold text-[#4a5d44] leading-none my-2.5">
         {remainingBudget}
       </div>

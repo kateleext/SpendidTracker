@@ -33,7 +33,7 @@ const BudgetPage = ({ onOpenSettings }: BudgetPageProps) => {
         <>
           <BudgetHero budget={budget} onOpenSettings={onOpenSettings} />
           
-          <div className="section-title mx-5 my-5 text-[18px] font-semibold text-text-primary">
+          <div className="section-title mx-5 mt-8 mb-4 text-[18px] font-semibold text-text-primary">
             {t('spendingHistory')}
           </div>
           
