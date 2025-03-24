@@ -13,28 +13,28 @@ const ViewToggle = () => {
 
   return (
     <div className="view-toggle flex bg-black/5 rounded-full p-0.5 overflow-hidden">
-      <div
-        className={`view-toggle-button px-3 py-1.5 rounded-full cursor-pointer text-[13px] flex items-center ${
+      <button
+        className={`view-toggle-button px-3 py-1.5 rounded-full cursor-pointer text-[13px] flex items-center transition-all ${
           view === 'daily'
-            ? 'bg-white text-accent'
-            : 'text-text-secondary'
+            ? 'bg-white text-accent shadow'
+            : 'text-gray-500 hover:text-gray-700'
         }`}
         onClick={() => handleViewChange('daily')}
       >
         <List className="w-3.5 h-3.5 mr-1.5" />
         {t('daily')}
-      </div>
-      <div
-        className={`view-toggle-button px-3 py-1.5 rounded-full cursor-pointer text-[13px] flex items-center ${
+      </button>
+      <button
+        className={`view-toggle-button px-3 py-1.5 rounded-full cursor-pointer text-[13px] flex items-center transition-all ${
           view === 'monthly'
-            ? 'bg-white text-accent'
-            : 'text-text-secondary'
+            ? 'bg-white text-accent shadow'
+            : 'text-gray-500 hover:text-gray-700'
         }`}
         onClick={() => handleViewChange('monthly')}
       >
         <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
         {t('monthly')}
-      </div>
+      </button>
     </div>
   );
 };
