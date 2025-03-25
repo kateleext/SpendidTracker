@@ -424,6 +424,8 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                 <span className="absolute top-4 left-4 text-white text-xl">$</span>
                 <input 
                   type="number" 
+                  inputMode="decimal" 
+                  pattern="[0-9]*[.,]?[0-9]*"
                   className="w-full py-3 px-10 bg-transparent border border-white/30 rounded-lg text-3xl font-medium text-white" 
                   placeholder="0.00" 
                   step="0.01" 

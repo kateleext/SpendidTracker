@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format, isToday, parseISO } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { useRef, useEffect } from "react";
 import ViewToggle from "../components/ViewToggle";
 import MemoryCard from "../components/MemoryCard";
@@ -28,10 +29,22 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
     queryKey: ['/api/expenses'],
   });
 
-  // Group expenses by date for daily view
+  // Hong Kong timezone
+  const HK_TIMEZONE = 'Asia/Hong_Kong';
+  
+  // Group expenses by date for daily view using Hong Kong timezone
   const dailyGroups = expenses.reduce<DailyExpenseGroup[]>((groups, expense) => {
-    const expenseDate = parseISO(expense.expense_date);
-    const dateStr = format(expenseDate, 'yyyy-MM-dd');
+    // Convert the ISO string to a Date object in Hong Kong timezone
+    const expenseDate = toZonedTime(parseISO(expense.expense_date), HK_TIMEZONE);
+    // Format the date in Hong Kong timezone
+    const dateStr = formatInTimeZone(expenseDate, HK_TIMEZONE, 'yyyy-MM-dd');
+    
+    // Check if today using Hong Kong timezone
+    const hkNow = toZonedTime(new Date(), HK_TIMEZONE);
+    const isHkToday = 
+      expenseDate.getDate() === hkNow.getDate() &&
+      expenseDate.getMonth() === hkNow.getMonth() &&
+      expenseDate.getFullYear() === hkNow.getFullYear();
     
     const existingGroup = groups.find(group => group.date === dateStr);
     if (existingGroup) {
@@ -40,7 +53,7 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
       groups.push({
         date: dateStr,
         expenses: [expense],
-        isToday: isToday(expenseDate)
+        isToday: isHkToday
       });
     }
     
@@ -152,9 +165,10 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
     };
   }, [isMobile, view, onViewChange]);
   
-  // Group expenses by month for monthly view
+  // Group expenses by month for monthly view (using Hong Kong timezone)
   const monthlyGroups = expenses.reduce<MonthlyExpenseGroup[]>((groups, expense) => {
-    const expenseDate = parseISO(expense.expense_date);
+    // Convert date to Hong Kong timezone
+    const expenseDate = toZonedTime(parseISO(expense.expense_date), HK_TIMEZONE);
     const month = expenseDate.getMonth() + 1;
     const year = expenseDate.getFullYear();
     const day = expenseDate.getDate();
