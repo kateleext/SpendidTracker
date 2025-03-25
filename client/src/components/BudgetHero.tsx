@@ -33,26 +33,25 @@ const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
       
       <div className="budget-bar-container bg-black/5 h-2.5 rounded my-2.5 mx-4 overflow-hidden">
         <div 
-          className="budget-bar-fill h-full bg-gradient-to-r from-accent to-accent-light rounded"
+          className="budget-bar-fill h-full bg-accent rounded"
           style={{ width: `${budget.percentage}%` }}
         ></div>
       </div>
       
-      <div className="budget-details text-[14px] text-text-secondary mb-1.5">
-        {spentAmount} {t('spentOf')} {totalBudget} {t('budget')}
+      <div className="budget-details text-[14px] text-text-secondary mb-3">
+        {spentAmount} {t('spentBullet')} {totalBudget} {t('budget')}
       </div>
       
-      <div className="budget-limit text-[14px] text-text-secondary mb-5">
-        {t('monthlyBudget')}: {totalBudget}
+      <div className="budget-action mb-5">
         <a 
           href="#" 
-          className="text-accent font-medium ml-1"
+          className="text-accent font-medium"
           onClick={(e) => {
             e.preventDefault();
             onOpenSettings();
           }}
         >
-          {t('adjust')}
+          {t('adjustMonthlyBudget')}
         </a>
       </div>
     </div>

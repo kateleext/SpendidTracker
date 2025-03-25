@@ -29,8 +29,7 @@ const ViewToggle = ({ activeView, onViewChange }: ViewToggleProps) => {
         type="button"
         aria-pressed={activeView === 'daily'}
       >
-        <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />
-        {t('daily')}
+        <LayoutGrid className="w-3.5 h-3.5" />
       </button>
       <button
         className={`view-toggle-button px-3 py-1.5 rounded-full cursor-pointer text-[13px] flex items-center transition-all ${
@@ -42,8 +41,7 @@ const ViewToggle = ({ activeView, onViewChange }: ViewToggleProps) => {
         type="button"
         aria-pressed={activeView === 'monthly'}
       >
-        <List className="w-3.5 h-3.5 mr-1.5" />
-        {t('monthly')}
+        <List className="w-3.5 h-3.5" />
       </button>
     </div>
   );

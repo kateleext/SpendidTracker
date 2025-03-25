@@ -94,24 +94,44 @@ export const useCamera = () => {
       setIsVideoPlaying(false);
 
       console.log('useCamera: Requesting camera access...');
-      // Check if we're on a mobile device and use appropriate constraints
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // Check device type
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      const isMobile = isiOS || /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-      // FIXED: Mobile should use environment (back camera), desktop should use user (front camera)
-      const constraints = {
-        video: isMobile 
-          ? { 
-              facingMode: { exact: 'environment' }, // Use back camera on mobile
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            } 
-          : { 
-              facingMode: 'user', // Use front camera on desktop
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            },
-        audio: false
-      };
+      console.log(`useCamera: Device detection - iOS: ${isiOS}, Mobile: ${isMobile}`);
+
+      // iOS-specific constraints (much simpler to avoid issues)
+      let constraints;
+      if (isiOS) {
+        // For iOS, use the simplest possible constraints to start
+        constraints = { 
+          video: true, 
+          audio: false 
+        };
+        console.log('useCamera: Using simplified constraints for iOS');
+      } else if (isMobile) {
+        // For other mobile devices
+        constraints = {
+          video: { 
+            facingMode: { exact: 'environment' }, // Use back camera on mobile
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        console.log('useCamera: Using mobile constraints');
+      } else {
+        // For desktop
+        constraints = {
+          video: { 
+            facingMode: 'user', // Use front camera on desktop
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        console.log('useCamera: Using desktop constraints');
+      }
 
       console.log(`useCamera: Using constraints for ${isMobile ? 'mobile' : 'desktop'}: ${JSON.stringify(constraints)}`);
 
@@ -144,25 +164,72 @@ export const useCamera = () => {
           // Set the media stream as the source
           videoRef.current.srcObject = mediaStream;
 
-          // NEW: Create a promise to handle video loading
+          // Wait for video to be ready with a timeout
           const playPromise = new Promise((resolve) => {
             if (!videoRef.current) return resolve(false);
 
-            // Handle metadata loaded event
-            videoRef.current.onloadedmetadata = async () => {
-              console.log('useCamera: Video metadata loaded, attempting to play');
-              if (videoRef.current) {
-                try {
-                  await videoRef.current.play();
-                  console.log('useCamera: Video playback started successfully');
-                  setIsVideoPlaying(true);
-                  resolve(true);
-                } catch (err) {
-                  console.error('useCamera: Error playing video:', err);
-                  resolve(false);
-                }
+            // iOS Safari specific handling
+            const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+
+            if (isiOS) {
+              console.log('useCamera: iOS device detected, using special playback handling');
+
+              // Set up specific handlers for iOS
+              videoRef.current.setAttribute('playsinline', 'true');
+              videoRef.current.setAttribute('webkit-playsinline', 'true');
+
+              // Add event listeners for iOS
+              const playHandler = async () => {
+                console.log('useCamera: iOS video play event fired');
+                setIsVideoPlaying(true);
+                resolve(true);
+              };
+
+              const errorHandler = (err: any) => {
+                console.error('useCamera: iOS video error:', err);
+                resolve(false);
+              };
+
+              // Add event listeners
+              videoRef.current.addEventListener('playing', playHandler, { once: true });
+              videoRef.current.addEventListener('error', errorHandler, { once: true });
+
+              // Attempt to play with user interaction simulation
+              try {
+                console.log('useCamera: Attempting to play video on iOS');
+                videoRef.current.play()
+                  .then(() => {
+                    console.log('useCamera: iOS video play successful');
+                  })
+                  .catch(err => {
+                    console.error('useCamera: iOS video play failed:', err);
+                    toast({
+                      title: t('cameraError'),
+                      description: t('iosVideoPlaybackIssue'),
+                      variant: 'destructive',
+                    });
+                  });
+              } catch (err) {
+                console.error('useCamera: Error during iOS video play attempt:', err);
               }
-            };
+            } else {
+              // Normal handling for non-iOS devices
+              // Handle metadata loaded event
+              videoRef.current.onloadedmetadata = async () => {
+                console.log('useCamera: Video metadata loaded, attempting to play');
+                if (videoRef.current) {
+                  try {
+                    await videoRef.current.play();
+                    console.log('useCamera: Video playback started successfully');
+                    setIsVideoPlaying(true);
+                    resolve(true);
+                  } catch (err) {
+                    console.error('useCamera: Error playing video:', err);
+                    resolve(false);
+                  }
+                }
+              };
+            }
           });
 
           // Wait for video to be ready with a timeout
@@ -295,7 +362,11 @@ export const useCamera = () => {
       return null;
     }
 
-    if (!isVideoPlaying) {
+    // For iOS, we might want to attempt capture even if isVideoPlaying is false
+    // as the event might not have fired correctly
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+
+    if (!isVideoPlaying && !isiOS) {
       console.error('useCamera: Cannot capture photo - video is not playing');
       toast({
         title: t('captureError'),
