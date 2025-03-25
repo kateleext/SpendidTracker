@@ -7,6 +7,7 @@ import fs from "fs";
 import sharp from "sharp";
 import { insertExpenseSchema } from "@shared/schema";
 import { z } from "zod";
+import { formatInTimeZone } from 'date-fns-tz';
 
 // Set up multer for image uploads
 const upload = multer({
@@ -87,8 +88,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Expense endpoints
   app.get("/api/expenses", async (req: Request, res: Response) => {
     try {
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      // Use Hong Kong timezone for date range handling
+      const HK_TIMEZONE = 'Asia/Hong_Kong';
+      
+      let startDate, endDate;
+      if (req.query.startDate) {
+        // Parse the date string in Hong Kong timezone context
+        const startDateStr = req.query.startDate as string;
+        startDate = new Date(`${startDateStr}T00:00:00+08:00`);
+      }
+      
+      if (req.query.endDate) {
+        // Parse the date string in Hong Kong timezone context
+        const endDateStr = req.query.endDate as string;
+        endDate = new Date(`${endDateStr}T23:59:59+08:00`);
+      }
       
       let dateRange;
       if (startDate && endDate) {
@@ -159,13 +173,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `/uploads/${path.basename(thumbnailPath)}`
         : imageUrl; // Use original image URL if thumbnail creation failed
       
+      // Use Hong Kong timezone for the expense date
+      const HK_TIMEZONE = 'Asia/Hong_Kong';
+      const hkDate = formatInTimeZone(new Date(), HK_TIMEZONE, 'yyyy-MM-dd');
+      
       const newExpense = await storage.createExpense({
         user_id: 1, // Default user
         amount: amount.toString(),
         title,
         image_url: imageUrl,
         image_thumbnail_url: thumbnailUrl,
-        expense_date: new Date().toISOString().split('T')[0]
+        expense_date: hkDate
       });
       
       console.log(`POST /api/expenses - Expense created with ID: ${newExpense.id}`);
