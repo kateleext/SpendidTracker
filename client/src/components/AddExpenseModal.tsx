@@ -449,18 +449,6 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   }}
                   autoFocus
                 />
-                <button
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm"
-                  onClick={() => {
-                    // Find and focus the description input
-                    const descriptionInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-                    if (descriptionInput) {
-                      descriptionInput.focus();
-                    }
-                  }}
-                >
-                  {t('enter')}
-                </button>
               </div>
             </div>
             <div className="mb-6">

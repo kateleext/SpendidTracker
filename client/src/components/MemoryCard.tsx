@@ -19,7 +19,7 @@ interface MemoryCardProps {
 }
 
 // Helper function to format time display using Hong Kong timezone
-const formatTimeDisplay = (dateTimeString: string): string => {
+const formatTimeDisplay = (dateTimeString: string, t: any): string => {
   const HK_TIMEZONE = 'Asia/Hong_Kong';
   
   // Convert to Hong Kong timezone
@@ -35,11 +35,23 @@ const formatTimeDisplay = (dateTimeString: string): string => {
     date.getFullYear() === now.getFullYear();
     
   if (isHkToday) {
-    // For today's expenses, show "X hours ago" or the time
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    // Calculate the time difference in minutes and hours
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
     
-    if (diffInHours < 24 && diffInHours > 0.5) {
-      return formatDistance(date, now, { addSuffix: true });
+    if (diffInMinutes < 60) {
+      // Less than an hour, show "X minutes ago"
+      if (diffInMinutes > 1) {
+        return t('minutesAgo', { count: diffInMinutes });
+      } else if (diffInMinutes === 1) {
+        return t('minutesAgo', { count: 1 });
+      } else {
+        // Just now
+        return formatInTimeZone(date, HK_TIMEZONE, 'HH:mm');
+      }
+    } else if (diffInHours < 24) {
+      // More than an hour but less than a day, show "X hours ago"
+      return t('hoursAgo', { count: diffInHours });
     } else {
       // Show military time for very recent expenses
       return formatInTimeZone(date, HK_TIMEZONE, 'HH:mm');
@@ -150,7 +162,7 @@ const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
               {expense.title}
             </div>
             <div className="memory-time text-[12px] text-gray-500 mt-1">
-              {formatTimeDisplay(expense.created_at)}
+              {formatTimeDisplay(expense.created_at, t)}
             </div>
           </div>
           <div className="memory-amount text-[16px] font-semibold text-accent">
