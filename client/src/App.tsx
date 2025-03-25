@@ -92,7 +92,7 @@ function App() {
         <InstallBanner />
         
         <header className="app-header flex items-center justify-between bg-accent text-white px-5 py-3">
-          <h1 className="text-xl font-bold">Spendid</h1>
+          <h1 className="text-xl font-semibold">Spendid</h1>
           <button 
             onClick={openSettingsModal}
             className="p-1 rounded-full hover:bg-accent-light transition-colors"
