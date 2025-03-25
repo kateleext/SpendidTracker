@@ -153,7 +153,7 @@ const MemoryCard = ({ expense, onImageClick }: MemoryCardProps) => {
               {formatTimeDisplay(expense.created_at)}
             </div>
           </div>
-          <div className="memory-amount text-[16px] font-bold text-accent">
+          <div className="memory-amount text-[16px] font-semibold text-accent">
             {formattedAmount}
           </div>
         </div>

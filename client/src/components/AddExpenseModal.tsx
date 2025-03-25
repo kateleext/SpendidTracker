@@ -367,7 +367,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
             {showCameraView ? t('snapAnExpense') : (capturedImage ? t('reviewExpense') : t('addExpense'))}
           </h2>
           <button 
-            className={`font-medium ${!showCameraView && capturedImage && amount ? 'text-[#6bbb5c] font-bold' : 'text-gray-400'}`}
+            className={`font-medium ${!showCameraView && capturedImage && amount ? 'text-[#6bbb5c] font-semibold' : 'text-gray-400'}`}
             onClick={handleSave}
             disabled={showCameraView || !capturedImage || !amount || createExpenseMutation.isPending}
             type="button"

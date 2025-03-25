@@ -25,7 +25,7 @@ const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
   
   return (
     <div className="budget-hero px-5 py-6 text-center bg-white rounded-xl shadow-lg mx-5 mb-6 mt-8">
-      <div className="budget-value text-[72px] font-bold text-[#4a5d44] leading-none my-2">
+      <div className="budget-value text-[72px] font-semibold text-[#4a5d44] leading-none my-2">
         {remainingBudget}
       </div>
       <div className="budget-caption text-[16px] text-black/70 mb-5">
