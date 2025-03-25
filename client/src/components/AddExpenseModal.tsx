@@ -289,7 +289,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       const formData = new FormData();
       formData.append('image', blob, `expense_${Date.now()}.jpg`);
       formData.append('amount', amount);
-      formData.append('title', title || 'groceries');
+      formData.append('title', title || 'Expense');
 
       console.log('AddExpenseModal: Submitting form data');
       // Submit the form
@@ -441,7 +441,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
               <input 
                 type="text" 
                 className="w-full py-3 px-4 bg-transparent border border-white/30 rounded-lg text-white" 
-                placeholder="groceries" 
+                placeholder="Expense" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
