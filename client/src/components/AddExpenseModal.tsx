@@ -472,18 +472,6 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                     }
                   }}
                 />
-                <button
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm"
-                  onClick={() => {
-                    // Only proceed if save button is enabled
-                    if (capturedImage && amount && parseFloat(amount) > 0 && !createExpenseMutation.isPending) {
-                      handleSave();
-                    }
-                  }}
-                  disabled={!capturedImage || !amount || parseFloat(amount) <= 0 || createExpenseMutation.isPending}
-                >
-                  {t('confirm')}
-                </button>
               </div>
             </div>
           </div>
