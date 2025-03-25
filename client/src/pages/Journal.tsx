@@ -239,7 +239,7 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
               <div className="day-group" key={group.date}>
                 <div className="day-header pt-4 pb-2.5 px-5 text-[22px] font-semibold bg-gray-50 sticky top-[50px] z-10 flex items-center">
                   <div className="day-header-date">
-                    {format(parseISO(group.date), 'MMMM d')}
+                    {formatInTimeZone(parseISO(group.date), HK_TIMEZONE, 'MMMM d')}
                   </div>
                   {group.isToday && (
                     <div className="day-header-badge ml-2.5 text-[12px] font-medium bg-accent text-white px-2 py-1 rounded-full opacity-90">

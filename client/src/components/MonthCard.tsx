@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from 'react-i18next';
 import { MonthlyExpenseGroup } from '../types';
 
@@ -9,8 +10,13 @@ interface MonthCardProps {
 
 const MonthCard = ({ monthGroup, onImageClick }: MonthCardProps) => {
   const { t } = useTranslation();
+  const HK_TIMEZONE = 'Asia/Hong_Kong';
   
-  const monthName = format(new Date(monthGroup.year, monthGroup.month - 1, 1), 'MMMM yyyy');
+  const monthName = formatInTimeZone(
+    new Date(monthGroup.year, monthGroup.month - 1, 1), 
+    HK_TIMEZONE, 
+    'MMMM yyyy'
+  );
   
   const handleThumbnailClick = (imageUrl: string) => {
     console.log('MonthCard: Opening image', imageUrl);

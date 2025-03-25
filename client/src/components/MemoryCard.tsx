@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { MoreVertical, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Expense } from '../types';
-import { format, formatDistance, isToday, parseISO } from 'date-fns';
+import { formatDistance, isToday, parseISO } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,24 +18,35 @@ interface MemoryCardProps {
   onImageClick: (imageUrl: string) => void;
 }
 
-// Helper function to format time display
+// Helper function to format time display using Hong Kong timezone
 const formatTimeDisplay = (dateTimeString: string): string => {
-  const date = parseISO(dateTimeString);
+  const HK_TIMEZONE = 'Asia/Hong_Kong';
   
-  if (isToday(date)) {
+  // Convert to Hong Kong timezone
+  const date = toZonedTime(parseISO(dateTimeString), HK_TIMEZONE);
+  
+  // Get current time in Hong Kong timezone
+  const now = toZonedTime(new Date(), HK_TIMEZONE);
+  
+  // Check if date is today in Hong Kong timezone
+  const isHkToday = 
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+    
+  if (isHkToday) {
     // For today's expenses, show "X hours ago" or the time
-    const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
     
     if (diffInHours < 24 && diffInHours > 0.5) {
       return formatDistance(date, now, { addSuffix: true });
     } else {
       // Show military time for very recent expenses
-      return format(date, 'HH:mm');
+      return formatInTimeZone(date, HK_TIMEZONE, 'HH:mm');
     }
   } else {
     // For older expenses, just show the time
-    return format(date, 'HH:mm');
+    return formatInTimeZone(date, HK_TIMEZONE, 'HH:mm');
   }
 };
 
