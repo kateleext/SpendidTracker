@@ -55,5 +55,7 @@
   "installApp": "Tambahkan ke Layar Utama",
   "installAppDescription": "Pasang untuk pengalaman yang lebih baik",
   "install": "Pasang",
-  "dismiss": "Tutup"
+  "dismiss": "Tutup",
+  "enter": "Masuk",
+  "confirm": "Konfirmasi"
 }

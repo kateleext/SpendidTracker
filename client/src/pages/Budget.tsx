@@ -24,7 +24,7 @@ const BudgetPage = ({ onOpenSettings }: BudgetPageProps) => {
   const isLoading = isBudgetLoading || isHistoryLoading;
 
   return (
-    <div id="budget-view" className="view-content">
+    <div id="budget-view" className="view-content pb-24">
       {isLoading ? (
         <div className="p-8 text-center">
           <p>{t('loading')}</p>
@@ -38,6 +38,9 @@ const BudgetPage = ({ onOpenSettings }: BudgetPageProps) => {
           </div>
           
           <BudgetHistory historyItems={historyItems} />
+          
+          {/* Extra padding div at the bottom to ensure content is visible */}
+          <div className="h-24"></div>
         </>
       ) : (
         <div className="p-8 text-center text-text-secondary">

@@ -232,7 +232,7 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
       </div>
 
       {view === 'daily' ? (
-        <div id="diary-daily-view" className="view-content pb-6">
+        <div id="diary-daily-view" className="view-content pb-24">
           {dailyGroups.length === 0 ? (
             <div className="text-center p-8 text-text-secondary">
               <p>{t('noExpenses')}</p>
@@ -262,9 +262,11 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
               </div>
             ))
           )}
+          {/* Extra padding div at the bottom to ensure content is visible */}
+          <div className="h-24"></div>
         </div>
       ) : (
-        <div id="diary-monthly-view" className="view-content pb-6">
+        <div id="diary-monthly-view" className="view-content pb-24">
           {monthlyGroups.length === 0 ? (
             <div className="text-center p-8 text-text-secondary">
               <p>{t('noExpenses')}</p>
@@ -279,6 +281,8 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
               />
             ))
           )}
+          {/* Extra padding div at the bottom to ensure content is visible */}
+          <div className="h-24"></div>
         </div>
       )}
     </div>

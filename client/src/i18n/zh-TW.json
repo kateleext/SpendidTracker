@@ -55,5 +55,7 @@
   "installApp": "添加至主屏幕",
   "installAppDescription": "安裝應用獲得更好體驗",
   "install": "安裝",
-  "dismiss": "關閉"
+  "dismiss": "關閉",
+  "enter": "輸入",
+  "confirm": "確認"
 }
