@@ -432,6 +432,17 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   min="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  onKeyDown={(e) => {
+                    // When user presses Enter/Return on amount field, move to description field
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      // Find and focus the description input
+                      const descriptionInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+                      if (descriptionInput) {
+                        descriptionInput.focus();
+                      }
+                    }
+                  }}
                   autoFocus
                 />
               </div>
@@ -444,6 +455,17 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                 placeholder="Expense" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  // When user presses Enter/Return on description field, save expense
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    // Only proceed if save button is enabled
+                    if (capturedImage && amount && parseFloat(amount) > 0 && !createExpenseMutation.isPending) {
+                      handleSave();
+                    }
+                  }
+                }}
               />
             </div>
           </div>
