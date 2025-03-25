@@ -51,5 +51,9 @@
   "captureError": "Kesalahan Pengambilan",
   "errorDrawingToCanvas": "Kesalahan memproses gambar kamera",
   "generalCaptureError": "Tidak dapat mengambil foto",
-  "cameraConstraintsError": "Kamera tidak mendukung fitur yang diperlukan"
+  "cameraConstraintsError": "Kamera tidak mendukung fitur yang diperlukan",
+  "installApp": "Tambahkan ke Layar Utama",
+  "installAppDescription": "Pasang untuk pengalaman yang lebih baik",
+  "install": "Pasang",
+  "dismiss": "Tutup"
 }

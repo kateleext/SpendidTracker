@@ -51,5 +51,9 @@
   "captureError": "捕獲錯誤",
   "errorDrawingToCanvas": "處理相機圖像時出錯",
   "generalCaptureError": "無法捕獲照片",
-  "cameraConstraintsError": "相機不支持所需功能"
+  "cameraConstraintsError": "相機不支持所需功能",
+  "installApp": "添加至主屏幕",
+  "installAppDescription": "安裝應用獲得更好體驗",
+  "install": "安裝",
+  "dismiss": "關閉"
 }

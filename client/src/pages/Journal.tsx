@@ -34,21 +34,16 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   
   // Group expenses by date for daily view using Hong Kong timezone
   const dailyGroups = expenses.reduce<DailyExpenseGroup[]>((groups, expense) => {
-    // Important: Keep the original date string format and parse it consistently
-    // This ensures the date is interpreted correctly in the Hong Kong timezone
+    // Directly use the date string from expense without timezone conversion to avoid date shifting
     const expenseDateStr = expense.expense_date.split('T')[0]; // Just get YYYY-MM-DD part
-    // Convert to date object in Hong Kong timezone
-    const expenseDate = toZonedTime(parseISO(expenseDateStr), HK_TIMEZONE);
     
-    // Check if today using Hong Kong timezone
+    // For isToday check, use Hong Kong timezone
     const hkNow = toZonedTime(new Date(), HK_TIMEZONE);
-    const isHkToday = 
-      expenseDate.getDate() === hkNow.getDate() &&
-      expenseDate.getMonth() === hkNow.getMonth() &&
-      expenseDate.getFullYear() === hkNow.getFullYear();
+    const today = formatInTimeZone(hkNow, HK_TIMEZONE, 'yyyy-MM-dd');
+    const isHkToday = expenseDateStr === today;
     
-    // Format the date for display and grouping
-    const dateStr = formatInTimeZone(expenseDate, HK_TIMEZONE, 'yyyy-MM-dd');
+    // Use the original date string directly to avoid any timezone conversions
+    const dateStr = expenseDateStr;
     
     const existingGroup = groups.find(group => group.date === dateStr);
     if (existingGroup) {
@@ -172,16 +167,15 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
     };
   }, [isMobile, view, onViewChange]);
   
-  // Group expenses by month for monthly view (using Hong Kong timezone)
+  // Group expenses by month for monthly view using the direct date values
   const monthlyGroups = expenses.reduce<MonthlyExpenseGroup[]>((groups, expense) => {
-    // Important: Keep the original date string format and parse it consistently
-    // This ensures the date is interpreted correctly in the Hong Kong timezone
+    // Directly use the date string from expense without timezone conversion
     const expenseDateStr = expense.expense_date.split('T')[0]; // Just get YYYY-MM-DD part
-    // Convert to date object in Hong Kong timezone
-    const expenseDate = toZonedTime(parseISO(expenseDateStr), HK_TIMEZONE);
-    const month = expenseDate.getMonth() + 1;
-    const year = expenseDate.getFullYear();
-    const day = expenseDate.getDate();
+    // Parse date components directly from the string to avoid timezone issues
+    const [yearStr, monthStr, dayStr] = expenseDateStr.split('-');
+    const year = parseInt(yearStr);
+    const month = parseInt(monthStr);
+    const day = parseInt(dayStr);
     
     // Find or create month group
     let monthGroup = groups.find(g => g.month === month && g.year === year);

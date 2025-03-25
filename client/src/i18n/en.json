@@ -51,5 +51,9 @@
   "captureError": "Capture Error",
   "errorDrawingToCanvas": "Error processing camera image",
   "generalCaptureError": "Could not capture photo",
-  "cameraConstraintsError": "Camera does not support required features"
+  "cameraConstraintsError": "Camera does not support required features",
+  "installApp": "Add Spendid to Home Screen",
+  "installAppDescription": "Install for a better experience",
+  "install": "Install",
+  "dismiss": "Dismiss"
 }
