@@ -144,36 +144,77 @@ export const useCamera = () => {
           // Set the media stream as the source
           videoRef.current.srcObject = mediaStream;
 
-          // NEW: Create a promise to handle video loading
-          const playPromise = new Promise((resolve) => {
-            if (!videoRef.current) return resolve(false);
-
-            // Handle metadata loaded event
-            videoRef.current.onloadedmetadata = async () => {
-              console.log('useCamera: Video metadata loaded, attempting to play');
-              if (videoRef.current) {
+          // IMPROVED: More robust video playback handling
+          const setupVideoPlayback = async () => {
+            if (!videoRef.current) return false;
+            
+            // Set both event handlers to be more resilient
+            return new Promise<boolean>((resolve) => {
+              if (!videoRef.current) return resolve(false);
+              
+              // Handler for metadata loaded
+              videoRef.current.onloadedmetadata = function() {
+                console.log('useCamera: Video metadata loaded');
+                startVideoPlayback();
+              };
+              
+              // Additional handler for when data is actually loadable
+              videoRef.current.onloadeddata = function() {
+                console.log('useCamera: Video data loaded');
+                startVideoPlayback();
+              };
+              
+              // Separate function to attempt playback
+              const startVideoPlayback = async () => {
+                if (!videoRef.current || isVideoPlaying) return;
+                
                 try {
+                  console.log('useCamera: Attempting to play video');
+                  
+                  // Use the play() method which returns a promise
                   await videoRef.current.play();
+                  
                   console.log('useCamera: Video playback started successfully');
                   setIsVideoPlaying(true);
                   resolve(true);
                 } catch (err) {
                   console.error('useCamera: Error playing video:', err);
-                  resolve(false);
+                  
+                  // Auto-retry once after a short delay
+                  setTimeout(async () => {
+                    if (!videoRef.current) return resolve(false);
+                    
+                    try {
+                      console.log('useCamera: Retry playing video');
+                      await videoRef.current.play();
+                      console.log('useCamera: Video playback started on retry');
+                      setIsVideoPlaying(true);
+                      resolve(true);
+                    } catch (retryErr) {
+                      console.error('useCamera: Retry failed:', retryErr);
+                      resolve(false);
+                    }
+                  }, 1000);
                 }
-              }
-            };
-          });
-
+              };
+              
+              // Also try to start playback immediately if browser doesn't trigger events
+              setTimeout(startVideoPlayback, 500);
+            });
+          };
+          
           // Wait for video to be ready with a timeout
-          const timeoutPromise = new Promise((resolve) => {
-            setTimeout(() => resolve(false), 5000);
+          const timeoutPromise = new Promise<boolean>((resolve) => {
+            setTimeout(() => {
+              console.warn('useCamera: Video setup timed out');
+              resolve(false);
+            }, 8000); // Longer timeout for slower devices
           });
 
-          // Race the video loading against a timeout
-          Promise.race([playPromise, timeoutPromise]).then((result) => {
-            if (!result) {
-              console.warn('useCamera: Video failed to play within timeout');
+          // Run the setup and handle timeout
+          Promise.race([setupVideoPlayback(), timeoutPromise]).then((success) => {
+            if (!success) {
+              console.warn('useCamera: Video failed to initialize properly');
               toast({
                 title: t('cameraError'),
                 description: t('videoPlaybackFailed'),

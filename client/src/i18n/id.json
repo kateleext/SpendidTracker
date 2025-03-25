@@ -44,5 +44,12 @@
   "cameraPermissionDenied": "Akses kamera ditolak. Harap izinkan akses kamera",
   "noCameraDetected": "Tidak ada kamera terdeteksi pada perangkat Anda",
   "cameraError": "Kesalahan Kamera",
-  "errorProcessingImage": "Kesalahan memproses gambar"
+  "errorProcessingImage": "Kesalahan memproses gambar",
+  "videoPlaybackFailed": "Pemutaran video gagal",
+  "videoElementNotAvailable": "Tampilan kamera tidak tersedia",
+  "videoNotPlaying": "Kamera tidak sedang streaming",
+  "captureError": "Kesalahan Pengambilan",
+  "errorDrawingToCanvas": "Kesalahan memproses gambar kamera",
+  "generalCaptureError": "Tidak dapat mengambil foto",
+  "cameraConstraintsError": "Kamera tidak mendukung fitur yang diperlukan"
 }

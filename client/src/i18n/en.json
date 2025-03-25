@@ -44,5 +44,12 @@
   "cameraPermissionDenied": "Camera access was denied. Please allow camera permissions",
   "noCameraDetected": "No camera detected on your device",
   "cameraError": "Camera Error",
-  "errorProcessingImage": "Error processing image"
+  "errorProcessingImage": "Error processing image",
+  "videoPlaybackFailed": "Video playback failed",
+  "videoElementNotAvailable": "Camera view not available",
+  "videoNotPlaying": "Camera is not streaming",
+  "captureError": "Capture Error",
+  "errorDrawingToCanvas": "Error processing camera image",
+  "generalCaptureError": "Could not capture photo",
+  "cameraConstraintsError": "Camera does not support required features"
 }
