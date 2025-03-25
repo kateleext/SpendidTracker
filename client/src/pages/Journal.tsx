@@ -62,7 +62,10 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   
   // Sort daily groups by date (newest first)
   dailyGroups.sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    // Parse dates in Hong Kong timezone to avoid date shift issues
+    const dateA = parseISO(a.date);
+    const dateB = parseISO(b.date);
+    return dateB.getTime() - dateA.getTime();
   });
   
   // Sort expenses within each group by time (newest first)

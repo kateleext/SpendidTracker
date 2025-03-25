@@ -144,13 +144,20 @@ export const useCamera = () => {
           // Set the media stream as the source
           videoRef.current.srcObject = mediaStream;
 
-          // IMPROVED: More robust video playback handling
+          // IMPROVED: More robust video playback handling with multiple fallbacks
           const setupVideoPlayback = async () => {
             if (!videoRef.current) return false;
             
             // Set both event handlers to be more resilient
             return new Promise<boolean>((resolve) => {
               if (!videoRef.current) return resolve(false);
+              
+              // Set play event to detect successful playback
+              videoRef.current.onplay = function() {
+                console.log('useCamera: Video play event fired');
+                setIsVideoPlaying(true);
+                resolve(true);
+              };
               
               // Handler for metadata loaded
               videoRef.current.onloadedmetadata = function() {
@@ -164,7 +171,14 @@ export const useCamera = () => {
                 startVideoPlayback();
               };
               
-              // Separate function to attempt playback
+              // Make video muted by default - this helps with autoplay policies
+              if (videoRef.current) {
+                videoRef.current.muted = true;
+                // @ts-ignore - playsInline is not recognized by TypeScript
+                videoRef.current.playsInline = true;
+              }
+              
+              // Separate function to attempt playback with multiple retries
               const startVideoPlayback = async () => {
                 if (!videoRef.current || isVideoPlaying) return;
                 
@@ -180,26 +194,39 @@ export const useCamera = () => {
                 } catch (err) {
                   console.error('useCamera: Error playing video:', err);
                   
-                  // Auto-retry once after a short delay
-                  setTimeout(async () => {
-                    if (!videoRef.current) return resolve(false);
-                    
-                    try {
-                      console.log('useCamera: Retry playing video');
-                      await videoRef.current.play();
-                      console.log('useCamera: Video playback started on retry');
-                      setIsVideoPlaying(true);
-                      resolve(true);
-                    } catch (retryErr) {
-                      console.error('useCamera: Retry failed:', retryErr);
-                      resolve(false);
+                  // Auto-retry with a more aggressive approach
+                  let retryCount = 0;
+                  const maxRetries = 3;
+                  
+                  const attemptRetry = () => {
+                    if (retryCount >= maxRetries || !videoRef.current) {
+                      console.error('useCamera: Max retries reached or video element gone');
+                      return resolve(false);
                     }
-                  }, 1000);
+                    
+                    retryCount++;
+                    setTimeout(async () => {
+                      if (!videoRef.current) return resolve(false);
+                      
+                      try {
+                        console.log(`useCamera: Retry #${retryCount} playing video`);
+                        await videoRef.current.play();
+                        console.log('useCamera: Video playback started on retry');
+                        setIsVideoPlaying(true);
+                        resolve(true);
+                      } catch (retryErr) {
+                        console.error(`useCamera: Retry #${retryCount} failed:`, retryErr);
+                        attemptRetry(); // Try again with increasing delay
+                      }
+                    }, retryCount * 800); // Increasing delay between retries
+                  };
+                  
+                  attemptRetry();
                 }
               };
               
               // Also try to start playback immediately if browser doesn't trigger events
-              setTimeout(startVideoPlayback, 500);
+              setTimeout(startVideoPlayback, 300);
             });
           };
           
