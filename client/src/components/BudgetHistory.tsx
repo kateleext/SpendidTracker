@@ -71,7 +71,7 @@ const BudgetHistory = ({ historyItems }: BudgetHistoryProps) => {
               return (
                 <div 
                   key={`${item.year}-${item.month}`} 
-                  className="history-item flex items-center bg-secondary-bg rounded-md mb-2.5 p-4 shadow-sm"
+                  className="history-item flex items-center bg-white rounded-md mb-2.5 p-4 shadow-sm"
                 >
                   <div className="history-month text-[14px] font-medium w-[35px] text-text-primary">
                     {monthName}

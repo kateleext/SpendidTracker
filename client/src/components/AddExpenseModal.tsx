@@ -402,14 +402,17 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
               )}
 
               {isVideoPlaying && (
-                <button 
-                  className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
-                  onClick={handleCapture}
-                  type="button"
-                  aria-label={t('takePicture')}
-                >
-                  <div className="w-14 h-14 rounded-full border-2 border-[#4a5d44]"></div>
-                </button>
+                <div className="absolute bottom-8 w-full flex flex-col items-center justify-center">
+                  <button 
+                    className="w-[5.2rem] h-[5.2rem] bg-white rounded-full flex items-center justify-center shadow-lg"
+                    onClick={handleCapture}
+                    type="button"
+                    aria-label={t('takePicture')}
+                  >
+                    <div className="w-[4.8rem] h-[4.8rem] rounded-full border-3 border-[#4a5d44]"></div>
+                  </button>
+                  <p className="text-white text-lg mt-2 font-medium">{t('snapAnExpense')}</p>
+                </div>
               )}
             </div>
           )}
@@ -424,7 +427,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                 <span className="absolute top-4 left-4 text-white text-xl">$</span>
                 <input 
                   type="number" 
-                  inputMode="decimal" 
+                  inputMode="numeric" 
                   pattern="[0-9]*[.,]?[0-9]*"
                   className="w-full py-3 px-10 bg-transparent border border-white/30 rounded-lg text-3xl font-medium text-white" 
                   placeholder="0.00" 
@@ -445,28 +448,54 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                   }}
                   autoFocus
                 />
+                <button
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm"
+                  onClick={() => {
+                    // Find and focus the description input
+                    const descriptionInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+                    if (descriptionInput) {
+                      descriptionInput.focus();
+                    }
+                  }}
+                >
+                  {t('enter')}
+                </button>
               </div>
             </div>
             <div className="mb-6">
               <label className="block text-white text-sm mb-2">{t('description')}</label>
-              <input 
-                type="text" 
-                className="w-full py-3 px-4 bg-transparent border border-white/30 rounded-lg text-white" 
-                placeholder="Expense" 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  // When user presses Enter/Return on description field, save expense
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    
+              <div className="relative">
+                <input 
+                  type="text" 
+                  className="w-full py-3 px-4 bg-transparent border border-white/30 rounded-lg text-white" 
+                  placeholder="Expense" 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    // When user presses Enter/Return on description field, save expense
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      
+                      // Only proceed if save button is enabled
+                      if (capturedImage && amount && parseFloat(amount) > 0 && !createExpenseMutation.isPending) {
+                        handleSave();
+                      }
+                    }
+                  }}
+                />
+                <button
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm"
+                  onClick={() => {
                     // Only proceed if save button is enabled
                     if (capturedImage && amount && parseFloat(amount) > 0 && !createExpenseMutation.isPending) {
                       handleSave();
                     }
-                  }
-                }}
-              />
+                  }}
+                  disabled={!capturedImage || !amount || parseFloat(amount) <= 0 || createExpenseMutation.isPending}
+                >
+                  {t('confirm')}
+                </button>
+              </div>
             </div>
           </div>
         )}
