@@ -19,7 +19,7 @@ interface MemoryCardProps {
 }
 
 // Helper function to format time display using Hong Kong timezone
-const formatTimeDisplay = (dateTimeString: string): string => {
+const formatTimeDisplay = (dateTimeString: string, t: any): string => {
   const HK_TIMEZONE = 'Asia/Hong_Kong';
   
   // Convert to Hong Kong timezone
@@ -39,7 +39,17 @@ const formatTimeDisplay = (dateTimeString: string): string => {
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
     
     if (diffInHours < 24 && diffInHours > 0.5) {
-      return formatDistance(date, now, { addSuffix: true });
+      // Format relative time with i18n support
+      const minutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      const hours = Math.floor(minutes / 60);
+      
+      if (hours >= 1) {
+        return t('hoursAgo', { count: hours });
+      } else if (minutes >= 1) {
+        return t('minutesAgo', { count: minutes });
+      } else {
+        return t('justNow');
+      }
     } else {
       // Show military time for very recent expenses
       return formatInTimeZone(date, HK_TIMEZONE, 'HH:mm');
