@@ -34,11 +34,10 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
   
   // Group expenses by date for daily view using Hong Kong timezone
   const dailyGroups = expenses.reduce<DailyExpenseGroup[]>((groups, expense) => {
-    // Parse the date directly from expense_date (which is already in YYYY-MM-DD format)
-    // This ensures we use the exact same date as stored in the database
-    const expenseDate = parseISO(expense.expense_date);
-    // Keep the date as-is to match the database record
-    const dateStr = expense.expense_date;
+    // Convert the ISO string to a Date object in Hong Kong timezone
+    const expenseDate = toZonedTime(parseISO(expense.expense_date), HK_TIMEZONE);
+    // Format the date in Hong Kong timezone
+    const dateStr = formatInTimeZone(expenseDate, HK_TIMEZONE, 'yyyy-MM-dd');
     
     // Check if today using Hong Kong timezone
     const hkNow = toZonedTime(new Date(), HK_TIMEZONE);
@@ -166,10 +165,10 @@ const Journal = ({ view, onViewChange, onImageClick }: JournalProps) => {
     };
   }, [isMobile, view, onViewChange]);
   
-  // Group expenses by month for monthly view
+  // Group expenses by month for monthly view (using Hong Kong timezone)
   const monthlyGroups = expenses.reduce<MonthlyExpenseGroup[]>((groups, expense) => {
-    // Use the same date parsing as in daily view for consistency
-    const expenseDate = parseISO(expense.expense_date);
+    // Convert date to Hong Kong timezone
+    const expenseDate = toZonedTime(parseISO(expense.expense_date), HK_TIMEZONE);
     const month = expenseDate.getMonth() + 1;
     const year = expenseDate.getFullYear();
     const day = expenseDate.getDate();

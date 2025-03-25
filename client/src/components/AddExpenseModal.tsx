@@ -423,30 +423,15 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
               <div className="relative">
                 <span className="absolute top-4 left-4 text-white text-xl">$</span>
                 <input 
-                  type="text" 
-                  inputMode="numeric" 
+                  type="number" 
+                  inputMode="decimal" 
                   pattern="[0-9]*[.,]?[0-9]*"
                   className="w-full py-3 px-10 bg-transparent border border-white/30 rounded-lg text-3xl font-medium text-white" 
                   placeholder="0.00" 
+                  step="0.01" 
+                  min="0"
                   value={amount}
-                  onChange={(e) => {
-                    // Only allow numeric input with at most one decimal point
-                    const value = e.target.value;
-                    const regex = /^[0-9]*[.,]?[0-9]*$/;
-                    if (value === '' || regex.test(value)) {
-                      setAmount(value);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    // Move to title field when Enter is pressed
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const titleInput = document.querySelector('input[placeholder="Expense"]');
-                      if (titleInput instanceof HTMLInputElement) {
-                        titleInput.focus();
-                      }
-                    }
-                  }}
+                  onChange={(e) => setAmount(e.target.value)}
                   autoFocus
                 />
               </div>
@@ -456,16 +441,9 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
               <input 
                 type="text" 
                 className="w-full py-3 px-4 bg-transparent border border-white/30 rounded-lg text-white" 
-                placeholder="Expense" 
+                placeholder="groceries" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  // Save the expense when Enter is pressed on the title field
-                  if (e.key === 'Enter' && capturedImage && amount) {
-                    e.preventDefault();
-                    handleSave();
-                  }
-                }}
               />
             </div>
           </div>
