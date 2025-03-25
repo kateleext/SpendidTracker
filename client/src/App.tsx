@@ -10,6 +10,7 @@ import AddButton from "./components/AddButton";
 import ImageModal from "./components/ImageModal";
 import SettingsModal from "./components/SettingsModal";
 import AddExpenseModal from "./components/AddExpenseModal";
+import InstallBanner from "./components/InstallBanner";
 import { TabType, ViewType } from "./types";
 
 function App() {
@@ -87,6 +88,9 @@ function App() {
   return (
     <Router>
       <div className="app-container max-w-[440px] mx-auto bg-primary-bg min-h-screen relative">
+        {/* Install banner for Android devices */}
+        <InstallBanner />
+        
         <header className="app-header flex items-center justify-between bg-accent text-white px-5 py-3">
           <h1 className="text-xl font-bold">Spendid</h1>
           <button 
