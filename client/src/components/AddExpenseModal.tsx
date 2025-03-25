@@ -14,11 +14,13 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const { 
     videoRef, 
     capturedImage, 
-    isVideoPlaying, // New state from the updated hook
+    isVideoPlaying,
     startCamera, 
     stopCamera, 
     capturePhoto, 
-    resetCapture 
+    resetCapture,
+    forceRestartCamera,
+    isiOS
   } = useCamera();
 
   const { toast } = useToast();
@@ -27,7 +29,7 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
   const [amount, setAmount] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [showCameraView, setShowCameraView] = useState<boolean>(true);
-  const [cameraInitialized, setCameraInitialized] = useState<boolean>(false);
+  const [cameraInitializing, setCameraInitializing] = useState<boolean>(false);
 
   // Initialize form values when modal opens
   useEffect(() => {
@@ -35,132 +37,166 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       console.log('AddExpenseModal: Modal opened, resetting form values');
       resetCapture();
       setAmount('');
-      setTitle(''); // Empty title, will use placeholder instead
+      setTitle('');
       setShowCameraView(true);
-      setCameraInitialized(false); // Start with camera disabled until explicitly started
+      setCameraInitializing(false);
+    } else {
+      // Make sure camera is stopped when modal is closed
+      stopCamera();
     }
-  }, [isOpen, resetCapture]);
+  }, [isOpen, resetCapture, stopCamera]);
 
-  // Initialize camera when showing camera view
+  // Add ref to track camera initialization attempts
+  const cameraStartAttemptRef = useRef(false);
+
+  // Start camera when entering camera view - with protection against loops
   useEffect(() => {
     let mounted = true;
-    let initTimeout: NodeJS.Timeout | null = null;
 
-    // Initialize camera when modal is open and we're in camera view
-    // Note: we now want to initialize even if cameraInitialized was previously true
-    // This ensures we reinitialize after going back from preview
-    if (isOpen && showCameraView) {
-      console.log('AddExpenseModal: Starting camera initialization sequence');
-      console.log(`AddExpenseModal: Camera state - initialized: ${cameraInitialized}, video playing: ${isVideoPlaying}`);
+    // Only run this effect if the modal is open and camera view is active AND
+    // we haven't already tried to start the camera
+    if (isOpen && showCameraView && !cameraStartAttemptRef.current) {
+      console.log('AddExpenseModal: Initializing camera view (first attempt)');
 
-      // Only start initialization if camera isn't already playing video
-      if (!isVideoPlaying) {
-        // Wait a moment to avoid rapid initialization
-        initTimeout = setTimeout(async () => {
-          if (!mounted) return;
+      // Mark that we've attempted to start the camera for this session
+      cameraStartAttemptRef.current = true;
 
-          console.log('AddExpenseModal: Actually initializing camera now');
+      // Use appropriate delay for iOS vs other platforms
+      const delay = isiOS ? 1000 : 500;
 
-          try {
-            if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
-              console.log('Media devices not supported');
-              toast({
-                title: t('error'),
-                description: t('cameraNotSupported'),
-                variant: 'destructive',
-              });
-              return;
-            }
+      setCameraInitializing(true);
 
-            // Stop any existing camera first to ensure clean state
-            stopCamera();
-
-            // Short delay to ensure previous camera is fully stopped
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            const success = await startCamera();
-
-            if (mounted && success) {
-              console.log('Camera initialized successfully');
-              setCameraInitialized(true);
-            } else if (mounted) {
-              // Camera failed to initialize but component is still mounted
-              toast({
-                title: t('error'),
-                description: t('cameraInitializationFailed'),
-                variant: 'destructive',
-              });
-            }
-          } catch (err) {
-            console.error('Camera initialization error:', err);
-            if (mounted) {
-              toast({
-                title: t('error'),
-                description: t('cameraInitializationError'),
-                variant: 'destructive',
-              });
-            }
-          }
-        }, 300);
-      }
-    }
-
-    // Cleanup function to handle unmounting or component unload
-    return () => {
-      mounted = false;
-
-      if (initTimeout) {
-        clearTimeout(initTimeout);
-      }
-
-      // Stop camera only when modal closes completely or when leaving camera view
-      if (!isOpen || !showCameraView) {
-        console.log('AddExpenseModal: Modal closed or leaving camera view, stopping camera');
+      // Only stop the camera first if we can guarantee it's already running
+      // Otherwise, this can cause a restart loop
+      if (isVideoPlaying) {
+        console.log('AddExpenseModal: Camera appears to be running, stopping first');
         stopCamera();
       }
-    };
-  }, [isOpen, showCameraView, isVideoPlaying, startCamera, stopCamera, toast, t]);
 
-  // Update cameraInitialized state based on isVideoPlaying
+      const timeoutId = setTimeout(async () => {
+        if (!mounted) return;
+
+        console.log('AddExpenseModal: Starting camera after initial delay');
+
+        try {
+          const success = await startCamera();
+          if (mounted) {
+            setCameraInitializing(false);
+            if (!success) {
+              console.warn('AddExpenseModal: Camera failed to initialize on first attempt');
+            }
+          }
+        } catch (err) {
+          console.error('AddExpenseModal: Camera initialization error:', err);
+          if (mounted) {
+            setCameraInitializing(false);
+          }
+        }
+      }, delay);
+
+      return () => {
+        mounted = false;
+        clearTimeout(timeoutId);
+      };
+    }
+
+    // Only stop camera when explicitly closing the modal
+    if (!isOpen && mounted) {
+      console.log('AddExpenseModal: Modal closed, stopping camera');
+      stopCamera();
+      // Reset the attempt tracker when modal closes
+      cameraStartAttemptRef.current = false;
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [isOpen, showCameraView, startCamera, stopCamera, isiOS, isVideoPlaying]);
+
+  // Add a separate effect to monitor and debug state changes
   useEffect(() => {
-    // When video starts playing, mark camera as fully initialized
-    if (isVideoPlaying && !cameraInitialized) {
-      setCameraInitialized(true);
-      console.log('Camera fully initialized and playing');
-    }
-    // If video stops playing while camera was considered initialized, update state
-    else if (!isVideoPlaying && cameraInitialized && showCameraView) {
-      setCameraInitialized(false);
-      console.log('Video stopped playing, camera needs reinitialization');
-    }
-  }, [isVideoPlaying, cameraInitialized, showCameraView]);
+    console.log('AddExpenseModal: State update - showCameraView:', showCameraView, 'capturedImage:', !!capturedImage);
+  }, [showCameraView, capturedImage]);
 
   // Handle capture button click
   const handleCapture = () => {
     console.log('AddExpenseModal: Capturing photo');
 
-    // Check if video is actually playing before attempting capture
-    if (!isVideoPlaying) {
-      console.error('Cannot capture - video is not playing');
-      toast({
-        title: t('error'),
-        description: t('cameraNotReady'),
-        variant: 'destructive',
-      });
-      return;
-    }
-
+    // On iOS, we'll attempt to capture even if video playback state isn't detected correctly
     const photoData = capturePhoto();
 
     if (photoData) {
-      console.log('Photo captured successfully');
-      setShowCameraView(false);
+      console.log('AddExpenseModal: Photo captured successfully');
+
+      // Important: Ensure we stop the camera before changing view state
+      // This step is critical for preventing race conditions
+      if (isiOS) {
+        stopCamera();
+      }
+
+      // Force a small delay before switching views to ensure state updates properly
+      setTimeout(() => {
+        // Explicitly set showCameraView to false to switch to preview mode
+        setShowCameraView(false);
+        console.log('AddExpenseModal: Switched to preview mode');
+      }, 100);
     } else {
+      console.error('AddExpenseModal: Photo capture failed');
       toast({
         title: t('error'),
-        description: t('photoCaptureFailed'),
+        description: t('photoCaptureFailed', 'Failed to capture photo'),
         variant: 'destructive',
       });
+    }
+  };
+
+  // Use ref to track manual camera start attempts and prevent multiple requests
+  const manualStartAttemptRef = useRef(false);
+
+  // Handle manual camera start for iOS
+  const handleManualCameraStart = async () => {
+    // Prevent multiple rapid clicks on the manual start button
+    if (manualStartAttemptRef.current) {
+      console.log('AddExpenseModal: Manual start already in progress, ignoring');
+      return;
+    }
+
+    console.log('AddExpenseModal: Manual camera start requested');
+
+    // Set flags to prevent multiple attempts
+    manualStartAttemptRef.current = true;
+    setCameraInitializing(true);
+
+    try {
+      // First ensure camera is fully stopped
+      await stopCamera();
+
+      // Wait a moment to ensure resources are released
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Now try to start the camera
+      const success = await startCamera();
+
+      if (!success) {
+        console.error('AddExpenseModal: Manual camera start failed');
+        toast({
+          title: t('error'),
+          description: t('cameraStartFailed', 'Failed to start camera'),
+          variant: 'destructive',
+        });
+      } else {
+        console.log('AddExpenseModal: Manual camera start succeeded');
+      }
+    } catch (err) {
+      console.error('AddExpenseModal: Error in manual camera start:', err);
+    } finally {
+      // Reset flags regardless of success/failure
+      setCameraInitializing(false);
+
+      // Reset manual start attempts flag after a delay
+      setTimeout(() => {
+        manualStartAttemptRef.current = false;
+      }, 1500);
     }
   };
 
@@ -180,7 +216,6 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate expense and budget queries to refresh data
       console.log('AddExpenseModal: Expense saved successfully');
       queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/budget/current'] });
@@ -191,9 +226,11 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
         description: t('expenseAddedSuccess'),
       });
 
+      // Stop camera and close modal
+      stopCamera();
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('AddExpenseModal: Error saving expense', error);
       toast({
         title: t('error'),
@@ -227,63 +264,36 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     try {
       console.log('AddExpenseModal: Processing captured image');
 
-      // Convert data URL to Blob with proper type
-      const dataURLParts = capturedImage.split(',');
-      if (dataURLParts.length !== 2) {
-        throw new Error('Invalid image data format');
-      }
+      let blob;
 
-      const mimeMatch = dataURLParts[0].match(/:(.*?);/);
-      const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-      console.log(`AddExpenseModal: Image MIME type: ${mime}`);
-
-      // Handle base64 data
-      let base64Data;
+      // Try the modern fetch approach first
       try {
-        base64Data = dataURLParts[1];
-        console.log(`AddExpenseModal: Base64 data length: ${base64Data.length}`);
-      } catch (err) {
-        console.error('Error extracting base64 data:', err);
-        throw new Error('Failed to process image data');
-      }
+        // Convert data URL to Blob using fetch API
+        const response = await fetch(capturedImage);
+        blob = await response.blob();
+      } catch (fetchErr) {
+        console.warn('AddExpenseModal: Fetch blob conversion failed, trying alternative method', fetchErr);
 
-      // Ensure we have valid base64 data
-      if (!base64Data || base64Data.trim() === '') {
-        console.error('AddExpenseModal: Empty base64 data');
-        throw new Error('No image data available');
-      }
+        // Fallback method for iOS that sometimes has issues with fetch
+        const dataURIParts = capturedImage.split(',');
+        const mimeType = dataURIParts[0].match(/:(.*?);/)[1];
+        const byteString = atob(dataURIParts[1]);
+        const arrayBuffer = new ArrayBuffer(byteString.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
 
-      // Convert base64 to binary with chunking for large images
-      let blob: Blob;
-      try {
-        const byteCharacters = atob(base64Data);
-        const byteArrays = [];
-
-        // Process in chunks to avoid memory issues
-        const chunkSize = 1024; // Process 1kb at a time
-        for (let i = 0; i < byteCharacters.length; i += chunkSize) {
-          const chunk = byteCharacters.slice(i, i + chunkSize);
-          const byteNumbers = new Array(chunk.length);
-
-          for (let j = 0; j < chunk.length; j++) {
-            byteNumbers[j] = chunk.charCodeAt(j);
-          }
-
-          const byteArray = new Uint8Array(byteNumbers);
-          byteArrays.push(byteArray);
+        for (let i = 0; i < byteString.length; i++) {
+          uint8Array[i] = byteString.charCodeAt(i);
         }
 
-        // Create blob with proper MIME type
-        blob = new Blob(byteArrays, { type: mime });
-        console.log(`AddExpenseModal: Created blob of type ${mime}, size: ${blob.size} bytes`);
-
-        if (blob.size === 0) {
-          throw new Error('Created blob has zero size');
-        }
-      } catch (err) {
-        console.error('Error creating blob:', err);
-        throw new Error('Failed to process image');
+        blob = new Blob([arrayBuffer], { type: mimeType });
       }
+
+      // Validate the blob
+      if (!blob || blob.size === 0) {
+        throw new Error('Invalid image data');
+      }
+
+      console.log(`AddExpenseModal: Created blob of type ${blob.type}, size: ${blob.size} bytes`);
 
       // Create form data
       const formData = new FormData();
@@ -291,7 +301,6 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
       formData.append('amount', amount);
       formData.append('title', title || 'groceries');
 
-      console.log('AddExpenseModal: Submitting form data');
       // Submit the form
       createExpenseMutation.mutate(formData);
     } catch (error: any) {
@@ -312,37 +321,24 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
     if (!showCameraView && capturedImage) {
       console.log('AddExpenseModal: Going back to camera view from preview');
 
-      // First reset the captured image
+      // Reset the captured image
       resetCapture();
 
-      // Then update UI state
-      setShowCameraView(true);
-
-      // Force re-initialization by stopping camera first
+      // For iOS, completely stop the camera before restarting
       stopCamera();
-      setCameraInitialized(false);
 
-      // Add a slight delay before restarting the camera
-      // This gives time for the previous camera to properly close
+      // Update UI state with a delay to ensure clean transition
       setTimeout(() => {
-        console.log('AddExpenseModal: Restarting camera after delay');
-        startCamera().then(success => {
-          if (success) {
-            console.log('AddExpenseModal: Camera restarted successfully');
-          } else {
-            console.error('AddExpenseModal: Failed to restart camera');
-            toast({
-              title: t('error'),
-              description: t('cameraRestartFailed'),
-              variant: 'destructive',
-            });
-          }
-        });
-      }, 300);
+        setShowCameraView(true);
+
+        // Start camera after UI update
+        setTimeout(() => {
+          startCamera();
+        }, isiOS ? 800 : 300);
+      }, 100);
     } else {
       // If we're in camera view, close the modal completely
       stopCamera();
-      setCameraInitialized(false);
       onClose();
     }
   };
@@ -378,13 +374,17 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
 
         {/* Full-screen Camera/Image section */}
         <div className="absolute inset-0 pt-12 z-10">
-          {capturedImage ? (
-            <img 
-              src={capturedImage} 
-              className="w-full h-full object-cover" 
-              alt="Captured expense" 
-            />
+          {/* Preview Image View */}
+          {(!showCameraView && capturedImage) ? (
+            <div className="w-full h-full">
+              <img 
+                src={capturedImage} 
+                className="w-full h-full object-cover" 
+                alt="Captured expense" 
+              />
+            </div>
           ) : (
+            /* Camera View */
             <div id="cameraPreview" className="w-full h-full flex items-center justify-center bg-black">
               {/* Always render the video element to ensure it's in the DOM */}
               <video 
@@ -395,16 +395,41 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                 muted
               />
 
-              {!isVideoPlaying && (
+              {/* Camera initialization message */}
+              {(!isVideoPlaying && showCameraView) && (
                 <div className="absolute inset-0 flex items-center justify-center text-white text-center">
-                  <p>{t('initializingCamera', 'Initializing camera...')}</p>
+                  <div className="p-4">
+                    {cameraInitializing ? (
+                      <p>{t('initializingCamera', 'Initializing camera...')}</p>
+                    ) : (
+                      <>
+                        <p className="mb-4 text-lg">{t('cameraNotActive', 'Camera needs permission to activate')}</p>
+
+                        {/* Show more prominent manual start button for iOS */}
+                        {isiOS && (
+                          <button
+                            className="mt-4 px-6 py-3 bg-white text-black rounded-lg font-bold text-lg shadow-lg"
+                            onClick={handleManualCameraStart}
+                            type="button"
+                            disabled={manualStartAttemptRef.current}
+                          >
+                            {manualStartAttemptRef.current 
+                              ? t('startingCamera', 'Starting Camera...') 
+                              : t('tapToStartCamera', 'Tap to Start Camera')}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {isVideoPlaying && (
+              {/* Camera capture button - always show in camera view for iOS */}
+              {showCameraView && (
                 <button 
-                  className="absolute bottom-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  className={`absolute bottom-8 w-16 h-16 ${isVideoPlaying ? 'bg-white' : 'bg-gray-300'} rounded-full flex items-center justify-center shadow-lg`}
                   onClick={handleCapture}
+                  disabled={!isVideoPlaying && !isiOS}
                   type="button"
                   aria-label={t('takePicture')}
                 >
@@ -424,6 +449,8 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
                 <span className="absolute top-4 left-4 text-white text-xl">$</span>
                 <input 
                   type="number" 
+                  inputMode="decimal"
+                  pattern="[0-9]*"
                   className="w-full py-3 px-10 bg-transparent border border-white/30 rounded-lg text-3xl font-medium text-white" 
                   placeholder="0.00" 
                   step="0.01" 
