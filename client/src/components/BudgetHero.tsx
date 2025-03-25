@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Budget } from '../types';
+import { Pencil } from 'lucide-react';
 
 interface BudgetHeroProps {
   budget: Budget;
@@ -23,11 +24,11 @@ const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
   const spentAmount = formatCurrency(budget.spent);
   
   return (
-    <div className="budget-hero px-5 py-8 text-center bg-white rounded-xl shadow-lg mx-5 mb-6">
-      <div className="budget-value text-[72px] font-bold text-[#4a5d44] leading-none my-2.5">
+    <div className="budget-hero px-5 py-6 text-center bg-white rounded-xl shadow-lg mx-5 mb-6 mt-8">
+      <div className="budget-value text-[72px] font-bold text-[#4a5d44] leading-none my-2">
         {remainingBudget}
       </div>
-      <div className="budget-caption text-[16px] text-black/70 mb-6">
+      <div className="budget-caption text-[16px] text-black/70 mb-5">
         {t('availableThisMonth')}
       </div>
       
@@ -38,21 +39,14 @@ const BudgetHero = ({ budget, onOpenSettings }: BudgetHeroProps) => {
         ></div>
       </div>
       
-      <div className="budget-details text-[14px] text-text-secondary mb-3">
+      <div className="budget-details text-[16px] text-text-secondary mb-5 flex items-center justify-center">
         {spentAmount} {t('spentBullet')} {totalBudget} {t('budget')}
-      </div>
-      
-      <div className="budget-action mb-5">
-        <a 
-          href="#" 
-          className="text-accent font-medium"
-          onClick={(e) => {
-            e.preventDefault();
-            onOpenSettings();
-          }}
+        <button
+          className="ml-1 text-accent"
+          onClick={onOpenSettings}
         >
-          {t('adjustMonthlyBudget')}
-        </a>
+          <Pencil size={16} />
+        </button>
       </div>
     </div>
   );
