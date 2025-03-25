@@ -403,15 +403,16 @@ const AddExpenseModal = ({ isOpen, onClose }: AddExpenseModalProps) => {
 
               {isVideoPlaying && (
                 <div className="absolute bottom-8 w-full flex flex-col items-center justify-center">
-                  <button 
-                    className="w-[5.2rem] h-[5.2rem] bg-white rounded-full flex items-center justify-center shadow-lg"
-                    onClick={handleCapture}
-                    type="button"
-                    aria-label={t('takePicture')}
-                  >
-                    <div className="w-[4.8rem] h-[4.8rem] rounded-full border-3 border-[#4a5d44]"></div>
-                  </button>
-                  <p className="text-white text-lg mt-2 font-medium">{t('snapAnExpense')}</p>
+                  <div className="w-[6rem] h-[6rem] rounded-full flex items-center justify-center border-2 border-white">
+                    <button 
+                      className="w-[5.2rem] h-[5.2rem] bg-white rounded-full flex items-center justify-center shadow-lg"
+                      onClick={handleCapture}
+                      type="button"
+                      aria-label={t('takePicture')}
+                    >
+                      <div className="w-[4.8rem] h-[4.8rem] rounded-full border-3 border-[#4a5d44]"></div>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

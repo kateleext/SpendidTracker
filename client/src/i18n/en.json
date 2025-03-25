@@ -55,7 +55,5 @@
   "installApp": "Add Spendid to Home Screen",
   "installAppDescription": "Install for a better experience",
   "install": "Install",
-  "dismiss": "Dismiss",
-  "enter": "Enter",
-  "confirm": "Confirm"
+  "dismiss": "Dismiss"
 }
